@@ -29,13 +29,12 @@
 (defn setup
   []
   (print-info *ns*)
-  (-> {:vertex-positions (float-array [0.75 0.75 0.0 1.0
-                                       0.75 -0.75 0.0 1.0
-                                       -0.75 -0.75 0.0 1.0])
-       :vert "tut01.vert"
+  (-> {:vert "tut01.vert"
        :frag "tut01.frag"
        :glsl-watcher (register file-watcher (path "src/glsl") :modify)}
-      (init-vertex-buffer)
+      (init-vertex-buffer (float-array [0.75 0.75 0.0 1.0
+                                        0.75 -0.75 0.0 1.0
+                                        -0.75 -0.75 0.0 1.0]))
       (init-position-buffer-object)
       (init-program)
       (assoc :vao (doto (gl-gen-vertex-arrays)
@@ -52,11 +51,11 @@
 
 (defn draw
   [{:keys [the-program position-buffer-object] :as state}]
-  (gl-clear-color 0 (/ 140 255.0) (/ 200 255.0) 0)
+  (gl-clear-color 0 0 0 0)
   (gl-clear GL_COLOR_BUFFER_BIT)
   (with-program the-program
     (gl-bind-buffer GL_ARRAY_BUFFER position-buffer-object)
-    (with-vertex-attrib-array
+    (with-vertex-attrib-arrays [0]
       (gl-vertex-attrib-pointer 0 4 GL_FLOAT false 0 0)
       (gl-draw-arrays GL_TRIANGLES 0 3))))
 
@@ -75,7 +74,7 @@
        :draw (var draw)
        :dispose (var dispose)
        :frame-rate 60
-       :size [720 450]
+       :size [500 500]
        :render-in-background? true
        :title "tut01"))))
 

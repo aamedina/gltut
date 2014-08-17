@@ -112,11 +112,13 @@
 
 (def file-watcher (.newWatchService (java.nio.file.FileSystems/getDefault)))
 
-(defmacro with-vertex-attrib-array
-  [& body]
-  `(do (gl-enable-vertex-attrib-array 0)
+(defmacro with-vertex-attrib-arrays
+  [ns & body]
+  `(do (doseq [n# ~ns]
+         (gl-enable-vertex-attrib-array n#))
        ~@body
-       (gl-disable-vertex-attrib-array 0)))
+       (doseq [n# ~ns]
+         (gl-disable-vertex-attrib-array n#))))
 
 (defmacro with-program
   [program & body]
@@ -125,9 +127,9 @@
        (gl-use-program 0)))
 
 (defn init-vertex-buffer
-  [{:keys [vertex-positions] :as state}]
+  [state vertex-data]
   (assoc state
-    :vertex-positions-buffer (buffer-of :float vertex-positions)))
+    :vertex-positions-buffer (buffer-of :float vertex-data)))
 
 (defn init-position-buffer-object
   [{:keys [vertex-positions-buffer] :as state}]
