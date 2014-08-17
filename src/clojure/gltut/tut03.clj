@@ -36,14 +36,22 @@
       :x-offset (cos (* t scale 0.5))
       :y-offset (sin (* t scale 0.5)))))
 
-(defn gen-buffers
-  [data]
-  (let [data (buffer-of :float (float-array data))
-        vertex-buffer-object (gl-gen-buffers)]
+(defn adjust-vertex-data
+  [{:keys [vertex-buffer-object vertex-data x-offset y-offset] :as state}]
+  (let [new-vertex-data (reduce-kv (fn [coll idx val]
+                                     (if (zero? (mod idx 4))
+                                       (-> coll
+                                           (update-in [idx] + x-offset)
+                                           (update-in [(inc idx)] + y-offset))
+                                       coll))
+                                   vertex-data vertex-data)
+        buf (buffer-of :float (float-array new-vertex-data))]
     (gl-bind-buffer GL_ARRAY_BUFFER vertex-buffer-object)
-    (gl-buffer-data GL_ARRAY_BUFFER data GL_STATIC_DRAW)
+    (gl-buffer-sub-data GL_ARRAY_BUFFER 0 buf)
     (gl-bind-buffer GL_ARRAY_BUFFER 0)
-    vertex-buffer-object))
+    (assoc state
+      :vertex-data new-vertex-data
+      :vertex-buffer-object vertex-buffer-object)))
 
 (defn setup
   []
@@ -51,10 +59,11 @@
   (let [vertex-data [0.25 0.25 0 1
                      0.25 -0.25 0 1
                      -0.25 -0.25 0 1]
-        vertex-buffer-object (gen-buffers vertex-data)]
-    (-> {:vert "tut02/FragPosition.vert"
-         :frag "tut02/FragPosition.frag"
-         :start-time (System/nanoTime)}
+        vertex-buffer-object (gen-buffers vertex-data GL_STREAM_DRAW)]
+    (-> {:vert "tut03/Standard.vert"
+         :frag "tut03/Standard.frag"
+         :start-time (System/nanoTime)
+         :vertex-data vertex-data}
         (assoc :vertex-buffer-object vertex-buffer-object)
         (init-program)
         (assoc :vao (doto (gl-gen-vertex-arrays)
@@ -69,9 +78,12 @@
     (-> (tut01/update state)
         (assoc :elapsed-time elapsed-time
                :last-frame-duration last-frame-duration
-               :last-frame-timestamp now)
+               :last-frame-timestamp now
+               :x-offset 0.0
+               :y-offset 0.0)
         compute-position-offsets
-        ((fn [{:keys [the-program] :as state}]
+        adjust-vertex-data
+        #_((fn [{:keys [the-program] :as state}]
            (assoc state
              :offset-location (gl-get-uniform-location the-program "offset")))))))
 
@@ -80,7 +92,7 @@
   (gl-clear-color 0 0 0 0)
   (gl-clear GL_COLOR_BUFFER_BIT)
   (with-program the-program
-    (gl-uniform2f (:offset-location state) x-offset y-offset)
+    #_(gl-uniform2f (:offset-location state) x-offset y-offset)
     (gl-bind-buffer GL_ARRAY_BUFFER vertex-buffer-object)
     (with-vertex-attrib-arrays [0]
       (gl-vertex-attrib-pointer 0 4 GL_FLOAT false 0 0)

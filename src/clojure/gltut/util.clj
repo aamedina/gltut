@@ -139,3 +139,12 @@
     (gl-bind-buffer GL_ARRAY_BUFFER 0)
     (assoc state
       :position-buffer-object pbo)))
+
+(defn gen-buffers
+  [data usage]
+  (let [data (buffer-of :float (float-array data))
+        vertex-buffer-object (gl-gen-buffers)]
+    (gl-bind-buffer GL_ARRAY_BUFFER vertex-buffer-object)
+    (gl-buffer-data GL_ARRAY_BUFFER data usage)
+    (gl-bind-buffer GL_ARRAY_BUFFER 0)
+    vertex-buffer-object))
