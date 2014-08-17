@@ -20,7 +20,10 @@
             [lwcgl.math.vector3d :as vec3]
             [lwcgl.math.vector4d :as vec4]
             [lwcgl.math.quaternion :as q]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io])
+  (:import (java.nio.file FileSystem StandardWatchEventKinds LinkOption
+                          FileSystems StandardWatchEventKinds$StdWatchEventKind)
+           (java.nio.file.attribute FileAttribute)))
 
 (defn print-info
   [ns]
@@ -92,3 +95,45 @@
            :double (buffers/create-double-buffer (alength ~element-array)))
      (.put ~element-array)
      (.flip)))
+
+(defn path
+  [file-path]
+  (.getPath (FileSystems/getDefault) file-path (into-array String [])))
+
+(defn register
+  [watcher path event]
+  (let [event (case event
+                :create java.nio.file.StandardWatchEventKinds/ENTRY_CREATE
+                :delete java.nio.file.StandardWatchEventKinds/ENTRY_DELETE
+                :modify java.nio.file.StandardWatchEventKinds/ENTRY_MODIFY)
+        vargs (into-array StandardWatchEventKinds$StdWatchEventKind [event])
+        key (.register path watcher vargs)]
+    key))
+
+(def file-watcher (.newWatchService (java.nio.file.FileSystems/getDefault)))
+
+(defmacro with-vertex-attrib-array
+  [& body]
+  `(do (gl-enable-vertex-attrib-array 0)
+       ~@body
+       (gl-disable-vertex-attrib-array 0)))
+
+(defmacro with-program
+  [program & body]
+  `(do (gl-use-program ~program)
+       ~@body
+       (gl-use-program 0)))
+
+(defn init-vertex-buffer
+  [{:keys [vertex-positions] :as state}]
+  (assoc state
+    :vertex-positions-buffer (buffer-of :float vertex-positions)))
+
+(defn init-position-buffer-object
+  [{:keys [vertex-positions-buffer] :as state}]
+  (let [pbo (gl-gen-buffers)]
+    (gl-bind-buffer GL_ARRAY_BUFFER pbo)
+    (gl-buffer-data GL_ARRAY_BUFFER vertex-positions-buffer GL_STATIC_DRAW)
+    (gl-bind-buffer GL_ARRAY_BUFFER 0)
+    (assoc state
+      :position-buffer-object pbo)))
