@@ -2,8 +2,9 @@
   (:gen-class)
   (:require [gltut.tut01 :refer [tut01]]
             [gltut.tut02 :refer [tut02]]
-            [gltut.tut03 :refer [tut03]]))
+            [gltut.tut03 :refer [tut03]]
+            [gltut.tut04 :refer [tut04]]))
 
 (defn -main
   [& args]
-  (tut03))
+  (tut04))

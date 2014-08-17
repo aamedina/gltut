@@ -64,23 +64,117 @@
 (defn setup
   []
   (print-info *ns*)
-  (let [vertex-data [0.25 0.25 0 1
-                     0.25 -0.25 0 1
-                     -0.25 -0.25 0 1]
+  (let [vertex-data [0.25 0.25 0.75 1.0
+                     0.25 -0.25 0.75 1.0
+                     -0.25 0.25 0.75 1.0
+
+                     0.25 -0.25 0.75 1.0
+                     -0.25 -0.25 0.75 1.0
+                     -0.25 0.25 0.75 1.0
+                     
+                     0.25 0.25 -0.75 1.0
+                     -0.25 0.25 -0.75 1.0
+                     0.25 -0.25 -0.75 1.0
+
+                     0.25 -0.25 -0.75 1.0
+                     -0.25 0.25 -0.75 1.0
+                     -0.25 -0.25 -0.75 1.0
+
+                     -0.25 0.25 0.75 1.0
+                     -0.25 -0.25 0.75 1.0
+                     -0.25 -0.25 -0.75 1.0
+
+                     -0.25 0.25 0.75 1.0
+                     -0.25 -0.25 -0.75 1.0
+                     -0.25 0.25 -0.75 1.0
+
+                     0.25 0.25 0.75 1.0
+                     0.25 -0.25 -0.75 1.0
+                     0.25 -0.25 0.75 1.0
+
+                     0.25 0.25 0.75 1.0
+                     0.25 0.25 -0.75 1.0
+                     0.25 -0.25 -0.75 1.0
+
+                     0.25 0.25 -0.75 1.0
+                     0.25 0.25 0.75 1.0
+                     -0.25 0.25 0.75 1.0
+
+                     0.25 0.25 -0.75 1.0
+                     -0.25 0.25 0.75 1.0
+                     -0.25 0.25 -0.75 1.0
+
+                     0.25 -0.25 -0.75 1.0
+                     -0.25 -0.25 0.75 1.0
+                     0.25 -0.25 0.75 1.0
+
+                     0.25 -0.25 -0.75 1.0
+                     -0.25 -0.25 -0.75 1.0
+                     -0.25 -0.25 0.75 1.0
+
+
+                     0.0 0.0 1.0 1.0
+                     0.0 0.0 1.0 1.0
+                     0.0 0.0 1.0 1.0
+
+                     0.0 0.0 1.0 1.0
+                     0.0 0.0 1.0 1.0
+                     0.0 0.0 1.0 1.0
+
+                     0.8 0.8 0.8 1.0
+                     0.8 0.8 0.8 1.0
+                     0.8 0.8 0.8 1.0
+
+                     0.8 0.8 0.8 1.0
+                     0.8 0.8 0.8 1.0
+                     0.8 0.8 0.8 1.0
+
+                     0.0 1.0 0.0 1.0
+                     0.0 1.0 0.0 1.0
+                     0.0 1.0 0.0 1.0
+
+                     0.0 1.0 0.0 1.0
+                     0.0 1.0 0.0 1.0
+                     0.0 1.0 0.0 1.0
+
+                     0.5 0.5 0.0 1.0
+                     0.5 0.5 0.0 1.0
+                     0.5 0.5 0.0 1.0
+
+                     0.5 0.5 0.0 1.0
+                     0.5 0.5 0.0 1.0
+                     0.5 0.5 0.0 1.0
+
+                     1.0 0.0 0.0 1.0
+                     1.0 0.0 0.0 1.0
+                     1.0 0.0 0.0 1.0
+
+                     1.0 0.0 0.0 1.0
+                     1.0 0.0 0.0 1.0
+                     1.0 0.0 0.0 1.0
+
+                     0.0 1.0 1.0 1.0
+                     0.0 1.0 1.0 1.0
+                     0.0 1.0 1.0 1.0
+
+                     0.0 1.0 1.0 1.0
+                     0.0 1.0 1.0 1.0
+                     0.0 1.0 1.0 1.0]
         {:keys [the-program] :as state} (init-program
-                                         {:vert "tut03/CalcOffset.vert"
-                                          :frag "tut03/CalcColor.frag"})
+                                         {:vert "tut04/OrthoWithOffset.vert"
+                                          :frag "tut04/StandardColors.frag"})
         state
         (assoc state
           :start-time (System/nanoTime)
           :vertex-data vertex-data
           :vertex-buffer-object (gen-buffers vertex-data GL_STATIC_DRAW)
-          :elapsed-time-uniform (gl-get-uniform-location the-program "time")
-          :loop-duration (gl-get-uniform-location the-program "loopDuration")
-          :frag-loop (gl-get-uniform-location the-program "fragLoopDuration")
+          :offset-uniform (gl-get-uniform-location the-program "offset")
           :vao (doto (gl-gen-vertex-arrays)
                  (gl-bind-vertex-array)))]
-    (update-shader state)))
+    (gl-enable GL_CULL_FACE)
+    (gl-cull-face GL_BACK)
+    (gl-front-face GL_CW)
+    state))
 
 (defn update
   [{:keys [start-time last-frame-timestamp the-program] :as state}]
@@ -88,23 +182,25 @@
         now (System/nanoTime)
         last-frame-duration (/ (- now (or last-frame-timestamp 0))
                                (float 1000000.0))]
-    (assoc (update-program state)
+    (assoc state
       :elapsed-time elapsed-time
       :last-frame-duration last-frame-duration
       :last-frame-timestamp now
       :finished? (kb/key-down? kb/KEY_ESCAPE))))
 
 (defn draw
-  [{:keys [vertex-buffer-object the-program elapsed-time-uniform elapsed-time]
+  [{:keys [vertex-buffer-object the-program offset-uniform vertex-data]
     :as state}]
   (gl-clear-color 0 0 0 0)
   (gl-clear GL_COLOR_BUFFER_BIT)
   (with-program the-program
-    (gl-uniform1f elapsed-time-uniform (/ elapsed-time 1000.0))
+    (gl-uniform2f offset-uniform 0.5 0.25)
     (gl-bind-buffer GL_ARRAY_BUFFER vertex-buffer-object)
-    (with-vertex-attrib-arrays [0]
-      (gl-vertex-attrib-pointer 0 4 GL_FLOAT false 0 0)
-      (gl-draw-arrays GL_TRIANGLES 0 3))))
+    (with-vertex-attrib-arrays [0 1]
+      (let [color-data (/ (* 4 (count vertex-data)) 2)]
+        (gl-vertex-attrib-pointer 0 4 GL_FLOAT false 0 0)
+        (gl-vertex-attrib-pointer 1 4 GL_FLOAT false 0 color-data)
+        (gl-draw-arrays GL_TRIANGLES 0 36)))))
 
 (defn tut04
   []
