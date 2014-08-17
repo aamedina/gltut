@@ -57,39 +57,44 @@
   (print-info *ns*)
   (let [vertex-data [0.25 0.25 0 1
                      0.25 -0.25 0 1
-                     -0.25 -0.25 0 1]]
-    (-> {:vert "tut03/Standard.vert"
-         :frag "tut03/Standard.frag"
-         :start-time (System/nanoTime)
-         :vertex-data vertex-data
-         :vertex-buffer-object (gen-buffers vertex-data GL_STREAM_DRAW)
-         :vao (doto (gl-gen-vertex-arrays)
-                (gl-bind-vertex-array))}
-        (init-program))))
+                     -0.25 -0.25 0 1]
+        {:keys [the-program] :as state} (init-program
+                                         {:vert "tut03/CalcOffset.vert"
+                                          :frag "tut03/CalcColor.frag"})
+        state
+        (assoc state
+          :start-time (System/nanoTime)
+          :vertex-data vertex-data
+          :vertex-buffer-object (gen-buffers vertex-data GL_STATIC_DRAW)
+          :elapsed-time-uniform (gl-get-uniform-location the-program "time")
+          :loop-duration (gl-get-uniform-location the-program "loopDuration")
+          :frag-loop (gl-get-uniform-location the-program "fragLoopDuration")
+          :vao (doto (gl-gen-vertex-arrays)
+                 (gl-bind-vertex-array)))]
+    (gl-use-program the-program)
+    (gl-uniform1f (:loop-duration state) 5.0)
+    (gl-uniform1f (:frag-loop state) 10.0)
+    (gl-use-program 0)
+    state))
 
 (defn update
-  [{:keys [start-time last-frame-timestamp] :as state}]
+  [{:keys [start-time last-frame-timestamp the-program] :as state}]
   (let [elapsed-time (/ (- (System/nanoTime) start-time) (float 1000000.0))
         now (System/nanoTime)
         last-frame-duration (/ (- now (or last-frame-timestamp 0))
                                (float 1000000.0))]
-    (-> (assoc (tut01/update state)
-          :elapsed-time elapsed-time
-          :last-frame-duration last-frame-duration
-          :last-frame-timestamp now)
-        compute-position-offsets
-        adjust-vertex-data)))
-
-;; ((fn [{:keys [the-program] :as state}]
-;;    (assoc state
-;;      :offset-location (gl-get-uniform-location the-program "offset"))))
+    (assoc state
+      :elapsed-time elapsed-time
+      :last-frame-duration last-frame-duration
+      :last-frame-timestamp now)))
 
 (defn draw
-  [{:keys [vertex-buffer-object the-program x-offset y-offset] :as state}]
+  [{:keys [vertex-buffer-object the-program elapsed-time-uniform elapsed-time]
+    :as state}]
   (gl-clear-color 0 0 0 0)
   (gl-clear GL_COLOR_BUFFER_BIT)
   (with-program the-program
-    #_(gl-uniform2f (:offset-location state) x-offset y-offset)
+    (gl-uniform1f elapsed-time-uniform (/ elapsed-time 1000.0))
     (gl-bind-buffer GL_ARRAY_BUFFER vertex-buffer-object)
     (with-vertex-attrib-arrays [0]
       (gl-vertex-attrib-pointer 0 4 GL_FLOAT false 0 0)
