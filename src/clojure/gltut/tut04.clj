@@ -126,20 +126,25 @@
                      0.0 1.0 1.0 1.0
                      0.0 1.0 1.0 1.0]
         {:keys [the-program] :as state} (init-program
-                                         {:vert "tut04/ManualPerspective.vert"
+                                         {:vert "tut04/MatrixPerspective.vert"
                                           :frag "tut04/StandardColors.frag"})
         state (assoc state
                 :start-time (System/nanoTime)
                 :vertex-data vertex-data
                 :vertex-buffer-object (gen-buffers vertex-data GL_STATIC_DRAW)
                 :offset-uniform (gl-get-uniform-location the-program "offset"))
-        frustum-scale (gl-get-uniform-location the-program "frustumScale")
-        z-near (gl-get-uniform-location the-program "zNear")
-        z-far (gl-get-uniform-location the-program "zFar")]
+        p-matrix (gl-get-uniform-location the-program "perspectiveMatrix")
+        frustum-scale 1.0
+        z-near 0.5
+        z-far 3.0
+        the-matrix [frustum-scale 0 0 0
+                    0 frustum-scale 0 0
+                    0 0 (/ (+ z-far z-near) (- z-near z-far)) -1.0
+                    0 0 (/ (* z-far z-near 2) (- z-near z-far)) 0]
+        matrix-array (float-array the-matrix)
+        matrix-buffer (buffer-of :float matrix-array)]
     (with-program the-program
-      (gl-uniform1f frustum-scale 1.0)
-      (gl-uniform1f z-near 1.0)
-      (gl-uniform1f z-far 3.0))
+      (gl-uniform-matrix4 p-matrix false matrix-buffer))
     (gl-bind-vertex-array (gl-gen-vertex-arrays))
     (gl-enable GL_CULL_FACE)
     (gl-cull-face GL_BACK)
@@ -163,7 +168,7 @@
     :as state}]
   (gl-clear-color 0 0 0 0)
   (gl-clear GL_COLOR_BUFFER_BIT)
-  (with-program the-program
+  #_(with-program the-program
     (gl-uniform2f offset-uniform 0.5 0.5)
     (gl-bind-buffer GL_ARRAY_BUFFER vertex-buffer-object)
     (with-vertex-attrib-arrays [0 1]

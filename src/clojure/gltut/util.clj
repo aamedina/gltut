@@ -148,3 +148,7 @@
     (gl-buffer-data GL_ARRAY_BUFFER data usage)
     (gl-bind-buffer GL_ARRAY_BUFFER 0)
     vertex-buffer-object))
+
+(defn create-matrix
+  [mat]
+  (buffer-of :float mat))
