@@ -24,7 +24,26 @@
             [clojure.java.io :as io]
 
             [gltut.util :refer :all])
-  (:import java.nio.FloatBuffer))
+  (:import (java.nio FloatBuffer)
+           (java.nio.file FileSystem StandardWatchEventKinds LinkOption
+                          FileSystems StandardWatchEventKinds$StdWatchEventKind)
+           (java.nio.file.attribute FileAttribute)))
+
+(defn path
+  [file-path]
+  (.getPath (FileSystems/getDefault) file-path (into-array String [])))
+
+(defn register
+  [watcher path event]
+  (let [event (case event
+                :create java.nio.file.StandardWatchEventKinds/ENTRY_CREATE
+                :delete java.nio.file.StandardWatchEventKinds/ENTRY_DELETE
+                :modify java.nio.file.StandardWatchEventKinds/ENTRY_MODIFY)
+        vargs (into-array StandardWatchEventKinds$StdWatchEventKind [event])
+        key (.register path watcher vargs)]
+    key))
+
+(def file-watcher (.newWatchService (java.nio.file.FileSystems/getDefault)))
 
 (defn init-vertex-buffer
   [{:keys [vertex-positions] :as state}]
@@ -47,16 +66,24 @@
                                        0.75 -0.75 0.0 1.0
                                        -0.75 -0.75 0.0 1.0])
        :vert "tut01.vert"
-       :frag "tut01.frag"}
+       :frag "tut01.frag"
+       :glsl-watcher (register file-watcher (path "src/glsl") :modify)}
       (init-vertex-buffer)
       (init-position-buffer-object)
       (init-program)
       (assoc :vao (doto (gl-gen-vertex-arrays)
                     (gl-bind-vertex-array)))))
 
+(defn update-shader
+  [{:keys [glsl-watcher] :as state}]
+  (init-program state)
+  #_(if-let [events (seq (.pollEvents glsl-watcher))]
+    (init-program state)
+    state))
+
 (defn update
   [state]
-  (cond-> state
+  (cond-> (update-shader state)
     (kb/key-down? kb/KEY_ESCAPE) (assoc :finished? true)))
 
 (defn draw
@@ -86,7 +113,7 @@
        :draw (var draw)
        :dispose (var dispose)
        :frame-rate 60
-       :size [720 150]
+       :size [720 450]
        :render-in-background? true
        :title "tut01"))))
 
