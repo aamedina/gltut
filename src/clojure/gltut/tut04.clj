@@ -26,91 +26,56 @@
             [gltut.util :refer :all]
             [gltut.tut01 :as tut01]))
 
-(defn compute-position-offsets
-  [{:keys [elapsed-time] :as state}]
-  (let [loop-duration 5.0
-        scale (/ (* 3.14159 2.0) loop-duration)
-        elapsed-time (/ elapsed-time 1000.0)
-        t (mod elapsed-time loop-duration)]
-    (assoc state
-      :x-offset (cos (* t scale 0.5))
-      :y-offset (sin (* t scale 0.5)))))
-
-(defn adjust-vertex-data
-  [{:keys [vertex-buffer-object vertex-data x-offset y-offset] :as state}]
-  (let [new-vertex-data (reduce-kv (fn [coll idx val]
-                                     (if (zero? (mod idx 4))
-                                       (-> coll
-                                           (update-in [idx] + x-offset)
-                                           (update-in [(inc idx)] + y-offset))
-                                       coll))
-                                   vertex-data vertex-data)
-        buf (buffer-of :float (float-array new-vertex-data))]
-    (gl-bind-buffer GL_ARRAY_BUFFER vertex-buffer-object)
-    (gl-buffer-sub-data GL_ARRAY_BUFFER 0 buf)
-    (gl-bind-buffer GL_ARRAY_BUFFER 0)
-    (assoc state
-      :vertex-buffer-object vertex-buffer-object)))
-
-(defn update-program
-  [state]
-  (let [{:keys [the-program] :as new-state} (init-program state)]
-    (gl-use-program the-program)
-    (gl-uniform1f (:loop-duration state) 5.0)
-    (gl-uniform1f (:frag-loop state) 10.0)
-    (gl-use-program 0)
-    new-state))
-
 (defn setup
   []
   (print-info *ns*)
-  (let [vertex-data [0.25 0.25 0.75 1.0
-                     0.25 -0.25 0.75 1.0
-                     -0.25 0.25 0.75 1.0
+  (let [vertex-data [0.25 0.25 -1.25 1.0
+                     0.25 -0.25 -1.25 1.0
+                     -0.25 0.25 -1.25 1.0
 
-                     0.25 -0.25 0.75 1.0
-                     -0.25 -0.25 0.75 1.0
-                     -0.25 0.25 0.75 1.0
-                     
-                     0.25 0.25 -0.75 1.0
-                     -0.25 0.25 -0.75 1.0
-                     0.25 -0.25 -0.75 1.0
+                     0.25 -0.25 -1.25 1.0
+                     -0.25 -0.25 -1.25 1.0
+                     -0.25 0.25 -1.25 1.0
 
-                     0.25 -0.25 -0.75 1.0
-                     -0.25 0.25 -0.75 1.0
-                     -0.25 -0.25 -0.75 1.0
+                     0.25 0.25 -2.75 1.0
+                     -0.25 0.25 -2.75 1.0
+                     0.25 -0.25 -2.75 1.0
 
-                     -0.25 0.25 0.75 1.0
-                     -0.25 -0.25 0.75 1.0
-                     -0.25 -0.25 -0.75 1.0
+                     0.25 -0.25 -2.75 1.0
+                     -0.25 0.25 -2.75 1.0
+                     -0.25 -0.25 -2.75 1.0
 
-                     -0.25 0.25 0.75 1.0
-                     -0.25 -0.25 -0.75 1.0
-                     -0.25 0.25 -0.75 1.0
+                     -0.25 0.25 -1.25 1.0
+                     -0.25 -0.25 -1.25 1.0
+                     -0.25 -0.25 -2.75 1.0
 
-                     0.25 0.25 0.75 1.0
-                     0.25 -0.25 -0.75 1.0
-                     0.25 -0.25 0.75 1.0
+                     -0.25 0.25 -1.25 1.0
+                     -0.25 -0.25 -2.75 1.0
+                     -0.25 0.25 -2.75 1.0
 
-                     0.25 0.25 0.75 1.0
-                     0.25 0.25 -0.75 1.0
-                     0.25 -0.25 -0.75 1.0
+                     0.25 0.25 -1.25 1.0
+                     0.25 -0.25 -2.75 1.0
+                     0.25 -0.25 -1.25 1.0
 
-                     0.25 0.25 -0.75 1.0
-                     0.25 0.25 0.75 1.0
-                     -0.25 0.25 0.75 1.0
+                     0.25 0.25 -1.25 1.0
+                     0.25 0.25 -2.75 1.0
+                     0.25 -0.25 -2.75 1.0
 
-                     0.25 0.25 -0.75 1.0
-                     -0.25 0.25 0.75 1.0
-                     -0.25 0.25 -0.75 1.0
+                     0.25 0.25 -2.75 1.0
+                     0.25 0.25 -1.25 1.0
+                     -0.25 0.25 -1.25 1.0
 
-                     0.25 -0.25 -0.75 1.0
-                     -0.25 -0.25 0.75 1.0
-                     0.25 -0.25 0.75 1.0
+                     0.25 0.25 -2.75 1.0
+                     -0.25 0.25 -1.25 1.0
+                     -0.25 0.25 -2.75 1.0
 
-                     0.25 -0.25 -0.75 1.0
-                     -0.25 -0.25 -0.75 1.0
-                     -0.25 -0.25 0.75 1.0
+                     0.25 -0.25 -2.75 1.0
+                     -0.25 -0.25 -1.25 1.0
+                     0.25 -0.25 -1.25 1.0
+
+                     0.25 -0.25 -2.75 1.0
+                     -0.25 -0.25 -2.75 1.0
+                     -0.25 -0.25 -1.25 1.0
 
 
                      0.0 0.0 1.0 1.0
@@ -161,16 +126,21 @@
                      0.0 1.0 1.0 1.0
                      0.0 1.0 1.0 1.0]
         {:keys [the-program] :as state} (init-program
-                                         {:vert "tut04/OrthoWithOffset.vert"
+                                         {:vert "tut04/ManualPerspective.vert"
                                           :frag "tut04/StandardColors.frag"})
-        state
-        (assoc state
-          :start-time (System/nanoTime)
-          :vertex-data vertex-data
-          :vertex-buffer-object (gen-buffers vertex-data GL_STATIC_DRAW)
-          :offset-uniform (gl-get-uniform-location the-program "offset")
-          :vao (doto (gl-gen-vertex-arrays)
-                 (gl-bind-vertex-array)))]
+        state (assoc state
+                :start-time (System/nanoTime)
+                :vertex-data vertex-data
+                :vertex-buffer-object (gen-buffers vertex-data GL_STATIC_DRAW)
+                :offset-uniform (gl-get-uniform-location the-program "offset"))
+        frustum-scale (gl-get-uniform-location the-program "frustumScale")
+        z-near (gl-get-uniform-location the-program "zNear")
+        z-far (gl-get-uniform-location the-program "zFar")]
+    (with-program the-program
+      (gl-uniform1f frustum-scale 1.0)
+      (gl-uniform1f z-near 1.0)
+      (gl-uniform1f z-far 3.0))
+    (gl-bind-vertex-array (gl-gen-vertex-arrays))
     (gl-enable GL_CULL_FACE)
     (gl-cull-face GL_BACK)
     (gl-front-face GL_CW)
@@ -194,7 +164,7 @@
   (gl-clear-color 0 0 0 0)
   (gl-clear GL_COLOR_BUFFER_BIT)
   (with-program the-program
-    (gl-uniform2f offset-uniform 0.5 0.25)
+    (gl-uniform2f offset-uniform 0.5 0.5)
     (gl-bind-buffer GL_ARRAY_BUFFER vertex-buffer-object)
     (with-vertex-attrib-arrays [0 1]
       (let [color-data (/ (* 4 (count vertex-data)) 2)]
