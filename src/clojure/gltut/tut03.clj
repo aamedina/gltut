@@ -50,7 +50,6 @@
     (gl-buffer-sub-data GL_ARRAY_BUFFER 0 buf)
     (gl-bind-buffer GL_ARRAY_BUFFER 0)
     (assoc state
-      :vertex-data new-vertex-data
       :vertex-buffer-object vertex-buffer-object)))
 
 (defn setup
@@ -58,16 +57,15 @@
   (print-info *ns*)
   (let [vertex-data [0.25 0.25 0 1
                      0.25 -0.25 0 1
-                     -0.25 -0.25 0 1]
-        vertex-buffer-object (gen-buffers vertex-data GL_STREAM_DRAW)]
+                     -0.25 -0.25 0 1]]
     (-> {:vert "tut03/Standard.vert"
          :frag "tut03/Standard.frag"
          :start-time (System/nanoTime)
-         :vertex-data vertex-data}
-        (assoc :vertex-buffer-object vertex-buffer-object)
-        (init-program)
-        (assoc :vao (doto (gl-gen-vertex-arrays)
-                      (gl-bind-vertex-array))))))
+         :vertex-data vertex-data
+         :vertex-buffer-object (gen-buffers vertex-data GL_STREAM_DRAW)
+         :vao (doto (gl-gen-vertex-arrays)
+                (gl-bind-vertex-array))}
+        (init-program))))
 
 (defn update
   [{:keys [start-time last-frame-timestamp] :as state}]
@@ -75,17 +73,16 @@
         now (System/nanoTime)
         last-frame-duration (/ (- now (or last-frame-timestamp 0))
                                (float 1000000.0))]
-    (-> (tut01/update state)
-        (assoc :elapsed-time elapsed-time
-               :last-frame-duration last-frame-duration
-               :last-frame-timestamp now
-               :x-offset 0.0
-               :y-offset 0.0)
+    (-> (assoc (tut01/update state)
+          :elapsed-time elapsed-time
+          :last-frame-duration last-frame-duration
+          :last-frame-timestamp now)
         compute-position-offsets
-        adjust-vertex-data
-        #_((fn [{:keys [the-program] :as state}]
-           (assoc state
-             :offset-location (gl-get-uniform-location the-program "offset")))))))
+        adjust-vertex-data)))
+
+;; ((fn [{:keys [the-program] :as state}]
+;;    (assoc state
+;;      :offset-location (gl-get-uniform-location the-program "offset"))))
 
 (defn draw
   [{:keys [vertex-buffer-object the-program x-offset y-offset] :as state}]

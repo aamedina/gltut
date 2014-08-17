@@ -26,15 +26,6 @@
             [gltut.util :refer :all]
             [gltut.tut01 :as tut01]))
 
-(defn gen-buffers
-  [data]
-  (let [data (buffer-of :float (float-array data))
-        vertex-buffer-object (gl-gen-buffers)]
-    (gl-bind-buffer GL_ARRAY_BUFFER vertex-buffer-object)
-    (gl-buffer-data GL_ARRAY_BUFFER data GL_STATIC_DRAW)
-    (gl-bind-buffer GL_ARRAY_BUFFER 0)
-    vertex-buffer-object))
-
 (defn setup
   []
   (print-info *ns*)
@@ -44,7 +35,7 @@
                      1.0 0.0 0.0 1.0
                      0.0 1.0 0.0 1.0
                      0.0 0.0 1.0 1.0]
-        vertex-buffer-object (gen-buffers vertex-data)]
+        vertex-buffer-object (gen-buffers vertex-data GL_STATIC_DRAW)]
     (-> {:vert "tut02/FragPosition.vert"
          :frag "tut02/FragPosition.frag"}
         (assoc :vertex-buffer-object vertex-buffer-object)
