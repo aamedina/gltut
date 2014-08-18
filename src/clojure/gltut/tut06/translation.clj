@@ -31,9 +31,9 @@
 (defn setup
   []
   (print-info *ns*)
-  (let [{:keys [the-program] :as state} (init-program
-                                         {:vert "tut05/Standard.vert"
-                                          :frag "tut05/Standard.frag"})
+  (let [shaders {:vert "tut06/PosColorLocalTransform.vert"
+                 :frag "tut06/ColorPassthrough.frag"}
+        {:keys [the-program] :as state} (init-program shaders)
         state
         (assoc state
           :start-time (System/nanoTime)
@@ -45,7 +45,7 @@
           :vao (doto (gl-gen-vertex-arrays)
                  (gl-bind-vertex-array)))
         z-near 1.0
-        z-far 3.0
+        z-far 45.0
         the-matrix [frustum-scale 0 0 0
                     0 frustum-scale 0 0
                     0 0 (/ (+ z-far z-near) (- z-near z-far)) -1.0

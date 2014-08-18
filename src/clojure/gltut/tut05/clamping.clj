@@ -51,7 +51,7 @@
   (gl-clear (bit-or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
   (with-program the-program
     (with-vertex-array vao
-      (gl-uniform3f offset-uniform 0.0 0.0 -1.0)
+      (gl-uniform3f offset-uniform 0.0 0.0 0.5)
       (gl-draw-elements GL_TRIANGLES (count index-data) GL_UNSIGNED_SHORT 0)
       (gl-uniform3f offset-uniform 0.0 0.0 -1.0)
       (gl-draw-elements-base-vertex GL_TRIANGLES (count index-data)
