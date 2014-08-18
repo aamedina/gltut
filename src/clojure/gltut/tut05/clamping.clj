@@ -32,18 +32,15 @@
 (defn update
   [state]
   (reduce (fn [state key]
-            (cond
-              (== key kb/KEY_ESCAPE)
-              (assoc state :finished? true)
+            (cond-> state
+              (== key kb/KEY_ESCAPE) (assoc :finished? true)
               
-              (== key kb/KEY_SPACE)
-              (update-in state [:depth-clamping-active?]
-                         (fn [depth-clamping-active?]
-                           (if depth-clamping-active?
-                             (gl-disable GL_DEPTH_CLAMP)
-                             (gl-enable GL_DEPTH_CLAMP))
-                           (not depth-clamping-active?)))
-              :else state))
+              (== key kb/KEY_SPACE) (update-in [:depth-clamping-active?]
+                                               (fn [clamping?]
+                                                 (if clamping?
+                                                   (gl-disable GL_DEPTH_CLAMP)
+                                                   (gl-enable GL_DEPTH_CLAMP))
+                                                 (not clamping?)))))
           state (key-presses)))
 
 (defn draw
@@ -54,7 +51,7 @@
   (gl-clear (bit-or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
   (with-program the-program
     (with-vertex-array vao
-      (gl-uniform3f offset-uniform 0.0 0.0 0.5)
+      (gl-uniform3f offset-uniform 0.0 0.0 -1.0)
       (gl-draw-elements GL_TRIANGLES (count index-data) GL_UNSIGNED_SHORT 0)
       (gl-uniform3f offset-uniform 0.0 0.0 -1.0)
       (gl-draw-elements-base-vertex GL_TRIANGLES (count index-data)
