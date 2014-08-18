@@ -4,8 +4,8 @@
             [gltut.tut02 :refer [tut02]]
             [gltut.tut03 :refer [tut03]]
             [gltut.tut04 :refer [tut04]]
-            [gltut.tut05 :refer [tut05]]))
+            [gltut.tut05.overlap :as overlap]))
 
 (defn -main
   [& args]
-  (tut05))
+  (overlap/tut05))

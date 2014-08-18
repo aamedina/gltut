@@ -1,4 +1,4 @@
-(ns gltut.tut05
+(ns gltut.tut05.overlap
   (:require [lwcgl.core :refer [sketch]]
             [lwcgl.buffers :as buffers]
             [lwcgl.openal :as al]
