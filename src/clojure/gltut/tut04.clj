@@ -24,7 +24,8 @@
             [clojure.java.io :as io]
 
             [gltut.util :refer :all]
-            [gltut.tut01 :as tut01]))
+            [gltut.tut01 :as tut01])
+  (:import (java.nio FloatBuffer)))
 
 (defn setup
   []
@@ -141,8 +142,7 @@
                     0 frustum-scale 0 0
                     0 0 (/ (+ z-far z-near) (- z-near z-far)) -1.0
                     0 0 (/ (* z-far z-near 2) (- z-near z-far)) 0]
-        matrix-array (float-array the-matrix)
-        matrix-buffer (buffer-of :float matrix-array)]
+        matrix-buffer (buffer-of :float (float-array the-matrix))]
     (with-program the-program
       (gl-uniform-matrix4 p-matrix false matrix-buffer))
     (gl-bind-vertex-array (gl-gen-vertex-arrays))
@@ -168,7 +168,7 @@
     :as state}]
   (gl-clear-color 0 0 0 0)
   (gl-clear GL_COLOR_BUFFER_BIT)
-  #_(with-program the-program
+  (with-program the-program
     (gl-uniform2f offset-uniform 0.5 0.5)
     (gl-bind-buffer GL_ARRAY_BUFFER vertex-buffer-object)
     (with-vertex-attrib-arrays [0 1]
