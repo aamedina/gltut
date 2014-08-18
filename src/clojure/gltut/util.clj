@@ -218,8 +218,26 @@
 (extend-protocol Mix
   Number
   (mix [x y a]
-    (* (+ x a) (- y x)))
-
+    (+ (* x (- 1 a)) (* y a)))
+  
   org.lwjgl.util.vector.Vector4f
   (mix [x y a]
     (vec4/add x (vec4/scale (vec4/sub y x (vec4)) a) (vec4))))
+
+(defn from-mat2
+  [mat]
+  [(.-m00 mat) (.-m10 mat)
+   (.-m01 mat) (.-m11 mat)])
+
+(defn from-mat3
+  [mat]
+  [(.-m00 mat) (.-m10 mat) (.-m20 mat)
+   (.-m01 mat) (.-m11 mat) (.-m21 mat)
+   (.-m02 mat) (.-m12 mat) (.-m22 mat)])
+
+(defn from-mat4
+  [mat]
+  [(.-m00 mat) (.-m10 mat) (.-m20 mat) (.-m30 mat)
+   (.-m01 mat) (.-m11 mat) (.-m21 mat) (.-m31 mat)
+   (.-m02 mat) (.-m12 mat) (.-m22 mat) (.-m32 mat)
+   (.-m03 mat) (.-m13 mat) (.-m23 mat) (.-m33 mat)])

@@ -1,4 +1,4 @@
-(ns gltut.tut06.scale
+(ns gltut.tut06.rotation
   (:require [lwcgl.core :refer [sketch]]
             [lwcgl.buffers :as buffers]
             [lwcgl.openal :as al]
@@ -101,8 +101,8 @@
   (with-program the-program
     (with-vertex-array vao
       (let [elapsed-time (/ elapsed-time 1000.0)]
-        (doseq [obj scalables]
-          (let [transform-matrix (construct-scalable obj elapsed-time)
+        (doseq [obj rotatables]
+          (let [transform-matrix (construct-rotatable obj elapsed-time)
                 flipped (fill-and-flip-buffer transform-matrix mat4-buffer)]
             (gl-uniform-matrix4 model false flipped)
             (gl-draw-elements GL_TRIANGLES (count index-data)
