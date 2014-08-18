@@ -1,4 +1,4 @@
-(ns gltut.tut06.translation
+(ns gltut.tut06.scale
   (:require [lwcgl.core :refer [sketch]]
             [lwcgl.buffers :as buffers]
             [lwcgl.openal :as al]
