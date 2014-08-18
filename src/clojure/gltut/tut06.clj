@@ -4,42 +4,6 @@
             [lwcgl.math.vector3d :as vec3 :refer [vec3]]
             [lwcgl.math.vector4d :as vec4 :refer [vec4]]))
 
-(definline set-matrix!
-  [mat row column val]
-  `(case ~[row column]
-     [0 0] (set! (.-m00 ~mat) ~val)
-     [0 1] (set! (.-m10 ~mat) ~val)
-     [0 2] (set! (.-m20 ~mat) ~val)
-     [0 3] (set! (.-m30 ~mat) ~val)
-     [1 0] (set! (.-m01 ~mat) ~val)
-     [1 1] (set! (.-m11 ~mat) ~val)
-     [1 2] (set! (.-m21 ~mat) ~val)
-     [1 3] (set! (.-m31 ~mat) ~val)
-     [2 0] (set! (.-m02 ~mat) ~val)
-     [2 1] (set! (.-m12 ~mat) ~val)
-     [2 2] (set! (.-m22 ~mat) ~val)
-     [2 3] (set! (.-m32 ~mat) ~val)
-     [3 0] (set! (.-m03 ~mat) ~val)
-     [3 1] (set! (.-m13 ~mat) ~val)
-     [3 2] (set! (.-m23 ~mat) ~val)
-     [3 3] (set! (.-m33 ~mat) ~val)))
-
-(defn set-row!
-  [mat row vec]
-  (set-matrix! mat row 0 (vec4/x vec))
-  (set-matrix! mat row 1 (vec4/y vec))
-  (set-matrix! mat row 2 (vec4/z vec))
-  (set-matrix! mat row 3 (vec4/w vec))
-  mat)
-
-(defn set-column!
-  [mat column vec]
-  (set-matrix! mat 0 column (vec4/x vec))
-  (set-matrix! mat 1 column (vec4/y vec))
-  (set-matrix! mat 2 column (vec4/z vec))
-  (set-matrix! mat 3 column (vec4/w vec))
-  mat)
-
 (defprotocol Instance
   (calc-offset [this elapsed-time]))
 
@@ -47,7 +11,9 @@
   [instance elapsed-time]
   (let [the-matrix (mat4)
         offset-vec (calc-offset instance elapsed-time)]
-    (vec4 (vec4/x offset-vec) (vec4/y offset-vec) (vec4/z offset-vec) 1.0)))
+    (mat4/set-column! the-matrix 3 (vec4 (vec3/x offset-vec)
+                                         (vec3/y offset-vec)
+                                         (vec3/z offset-vec) 1.0))))
 
 (defn calculate-frustum-scale
   [fov]
@@ -59,17 +25,27 @@
 (def stationary-offset
   (reify Instance
     (calc-offset [this elapsed-time]
-      )))
+      (vec3 0.0 0.0 -20.0))))
 
 (def oval-offset
   (reify Instance
     (calc-offset [this elapsed-time]
-      )))
+      (let [loop-duration 3.0
+            scale (/ (* PI 2) loop-duration)
+            curr-time-through-loop (mod elapsed-time loop-duration)]
+        (vec3 (* (cos (* curr-time-through-loop scale)) 4)
+              (* (sin (* curr-time-through-loop scale)) 6)
+              -20.0)))))
 
 (def bottom-circle-offset
   (reify Instance
     (calc-offset [this elapsed-time]
-      )))
+      (let [loop-duration 12.0
+            scale (/ (* PI 2) loop-duration)
+            curr-time-through-loop (mod elapsed-time loop-duration)]
+        (vec3 (* (cos (* curr-time-through-loop scale)) 5)
+              -3.5
+              (- (sin (* curr-time-through-loop scale 5)) 20.0))))))
 
 (def instance-list [stationary-offset oval-offset bottom-circle-offset])
 
