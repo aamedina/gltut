@@ -179,3 +179,28 @@
                       ~@body)]
          (gl-bind-vertex-array 0)
          ret#))))
+
+(defn key-event
+  []
+  (when (kb/next)
+    (kb/event-key)))
+
+(defn key-pressed?
+  [key]
+  (kb/event-key-state))
+
+(defn key-released?
+  [key]
+  (not (key-pressed? key)))
+
+(defn key-events
+  []
+  (take-while (complement nil?) (repeatedly key-event)))
+
+(defn key-presses
+  []
+  (filter key-pressed? (key-events)))
+
+(defn key-releases
+  []
+  (filter key-released? (key-events)))
