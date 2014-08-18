@@ -35,7 +35,7 @@
                      1.0 0.0 0.0 1.0
                      0.0 1.0 0.0 1.0
                      0.0 0.0 1.0 1.0]
-        vertex-buffer-object (gen-buffers vertex-data GL_STATIC_DRAW)]
+        vertex-buffer-object (gen-buffers :float vertex-data GL_STATIC_DRAW)]
     (-> {:vert "tut02/FragPosition.vert"
          :frag "tut02/FragPosition.frag"}
         (assoc :vertex-buffer-object vertex-buffer-object)

@@ -27,116 +27,166 @@
             [gltut.tut01 :as tut01])
   (:import (java.nio FloatBuffer)))
 
+(def ^:const RIGHT_EXTENT (float 0.8))
+(def ^:const LEFT_EXTENT (float (- RIGHT_EXTENT)))
+(def ^:const TOP_EXTENT (float 0.2))
+(def ^:const MIDDLE_EXTENT (float 0.0))
+(def ^:const BOTTOM_EXTENT (float (- TOP_EXTENT)))
+(def ^:const FRONT_EXTENT (float -1.25))
+(def ^:const REAR_EXTENT (float -1.75))
+(def ^:const frustum-scale (float 1.0))
+(def ^:const num-vertices 36)
+(def ^:const color-data-offset (* 4 3 num-vertices))
+
+(def vertex-data
+  [LEFT_EXTENT TOP_EXTENT REAR_EXTENT
+   LEFT_EXTENT MIDDLE_EXTENT FRONT_EXTENT
+   RIGHT_EXTENT MIDDLE_EXTENT FRONT_EXTENT
+   RIGHT_EXTENT TOP_EXTENT REAR_EXTENT
+
+   LEFT_EXTENT BOTTOM_EXTENT REAR_EXTENT
+   LEFT_EXTENT MIDDLE_EXTENT FRONT_EXTENT
+   RIGHT_EXTENT MIDDLE_EXTENT FRONT_EXTENT
+   RIGHT_EXTENT BOTTOM_EXTENT REAR_EXTENT
+
+   LEFT_EXTENT TOP_EXTENT REAR_EXTENT
+   LEFT_EXTENT MIDDLE_EXTENT FRONT_EXTENT
+   LEFT_EXTENT BOTTOM_EXTENT REAR_EXTENT
+
+   RIGHT_EXTENT TOP_EXTENT REAR_EXTENT
+   RIGHT_EXTENT MIDDLE_EXTENT FRONT_EXTENT
+   RIGHT_EXTENT BOTTOM_EXTENT REAR_EXTENT
+
+   LEFT_EXTENT BOTTOM_EXTENT REAR_EXTENT
+   LEFT_EXTENT TOP_EXTENT REAR_EXTENT
+   RIGHT_EXTENT TOP_EXTENT REAR_EXTENT
+   RIGHT_EXTENT BOTTOM_EXTENT REAR_EXTENT
+
+   ;; Object 2 positions
+   TOP_EXTENT RIGHT_EXTENT REAR_EXTENT
+   MIDDLE_EXTENT RIGHT_EXTENT FRONT_EXTENT
+   MIDDLE_EXTENT LEFT_EXTENT FRONT_EXTENT
+   TOP_EXTENT LEFT_EXTENT REAR_EXTENT
+
+   BOTTOM_EXTENT RIGHT_EXTENT REAR_EXTENT
+   MIDDLE_EXTENT RIGHT_EXTENT FRONT_EXTENT
+   MIDDLE_EXTENT LEFT_EXTENT FRONT_EXTENT
+   BOTTOM_EXTENT LEFT_EXTENT REAR_EXTENT
+
+   TOP_EXTENT RIGHT_EXTENT REAR_EXTENT
+   MIDDLE_EXTENT RIGHT_EXTENT FRONT_EXTENT
+   BOTTOM_EXTENT RIGHT_EXTENT REAR_EXTENT
+
+   TOP_EXTENT LEFT_EXTENT REAR_EXTENT
+   MIDDLE_EXTENT LEFT_EXTENT FRONT_EXTENT
+   BOTTOM_EXTENT LEFT_EXTENT REAR_EXTENT
+
+   BOTTOM_EXTENT RIGHT_EXTENT REAR_EXTENT
+   TOP_EXTENT RIGHT_EXTENT REAR_EXTENT
+   TOP_EXTENT LEFT_EXTENT REAR_EXTENT
+   BOTTOM_EXTENT LEFT_EXTENT REAR_EXTENT
+
+   ;; Object 1 colors
+   0.75 0.75 1.0 1.0   ;; GREEN_COLOR
+   0.75 0.75 1.0 1.0
+   0.75 0.75 1.0 1.0
+   0.75 0.75 1.0 1.0
+
+   0.0 0.5 0.0 1.0     ;; BLUE_COLOR
+   0.0 0.5 0.0 1.0
+   0.0 0.5 0.0 1.0
+   0.0 0.5 0.0 1.0
+
+   1.0 0.0 0.0 1.0     ;; RED_COLOR
+   1.0 0.0 0.0 1.0
+   1.0 0.0 0.0 1.0
+
+   0.8 0.8 0.8 1.0     ;; GREY_COLOR
+   0.8 0.8 0.8 1.0
+   0.8 0.8 0.8 1.0
+
+   0.5 0.5 0.0 1.0     ;; BROWN_COLOR
+   0.5 0.5 0.0 1.0
+   0.5 0.5 0.0 1.0
+   0.5 0.5 0.0 1.0
+
+   ;; Object 2 colors
+   1.0 0.0 0.0 1.0     ;; RED_COLOR
+   1.0 0.0 0.0 1.0
+   1.0 0.0 0.0 1.0
+   1.0 0.0 0.0 1.0
+
+   0.5 0.5 0.0 1.0     ;; BROWN_COLOR
+   0.5 0.5 0.0 1.0
+   0.5 0.5 0.0 1.0
+   0.5 0.5 0.0 1.0
+
+   0.0 0.5 0.0 1.0     ;; BLUE_COLOR
+   0.0 0.5 0.0 1.0
+   0.0 0.5 0.0 1.0
+
+   0.75 0.75 1.0 1.0   ;; GREEN_COLOR
+   0.75 0.75 1.0 1.0
+   0.75 0.75 1.0 1.0
+
+   0.8 0.8 0.8 1.0     ;; GREY_COLOR
+   0.8 0.8 0.8 1.0
+   0.8 0.8 0.8 1.0
+   0.8 0.8 0.8 1.0])
+
+(def index-data
+  [0 2 1
+   3 2 0
+
+   4 5 6
+   6 7 4
+
+   8 9 10
+   11 13 12
+
+   14 16 15
+   17 16 14])
+
+(defn init-vertex-array-objects
+  [{:keys [vertex-buffer-object index-buffer-object] :as state}]
+  (let [vao1 (gl-gen-vertex-arrays)]
+    (gl-bind-vertex-array vao1)
+    (gl-bind-buffer GL_ARRAY_BUFFER vertex-buffer-object)
+    (gl-enable-vertex-attrib-array 0)
+    (gl-enable-vertex-attrib-array 1)
+    (gl-vertex-attrib-pointer 0 3 GL_FLOAT false 0 0)
+    (gl-vertex-attrib-pointer 1 4 GL_FLOAT false 0 color-data-offset)
+    (gl-bind-buffer GL_ELEMENT_ARRAY_BUFFER index-buffer-object)
+    (gl-bind-vertex-array 0)
+    (let [vao2 (gl-gen-vertex-arrays)
+          pos-data-offset (* 12 (/ num-vertices 2))
+          color-data-offset (+ color-data-offset (* 16 (/ num-vertices 2)))]
+      (gl-bind-vertex-array vao2)
+      (gl-enable-vertex-attrib-array 0)
+      (gl-enable-vertex-attrib-array 1)
+      (gl-vertex-attrib-pointer 0 3 GL_FLOAT false 0 pos-data-offset)
+      (gl-vertex-attrib-pointer 1 4 GL_FLOAT false 0 color-data-offset)
+      (gl-bind-buffer GL_ELEMENT_ARRAY_BUFFER index-buffer-object)
+      (gl-bind-vertex-array 0)
+      (assoc state
+        :vao1 vao1
+        :vao2 vao2))))
+
 (defn setup
   []
   (print-info *ns*)
-  (let [vertex-data [0.25 0.25 -1.25 1.0
-                     0.25 -0.25 -1.25 1.0
-                     -0.25 0.25 -1.25 1.0
-
-                     0.25 -0.25 -1.25 1.0
-                     -0.25 -0.25 -1.25 1.0
-                     -0.25 0.25 -1.25 1.0
-
-                     0.25 0.25 -2.75 1.0
-                     -0.25 0.25 -2.75 1.0
-                     0.25 -0.25 -2.75 1.0
-
-                     0.25 -0.25 -2.75 1.0
-                     -0.25 0.25 -2.75 1.0
-                     -0.25 -0.25 -2.75 1.0
-
-                     -0.25 0.25 -1.25 1.0
-                     -0.25 -0.25 -1.25 1.0
-                     -0.25 -0.25 -2.75 1.0
-
-                     -0.25 0.25 -1.25 1.0
-                     -0.25 -0.25 -2.75 1.0
-                     -0.25 0.25 -2.75 1.0
-
-                     0.25 0.25 -1.25 1.0
-                     0.25 -0.25 -2.75 1.0
-                     0.25 -0.25 -1.25 1.0
-
-                     0.25 0.25 -1.25 1.0
-                     0.25 0.25 -2.75 1.0
-                     0.25 -0.25 -2.75 1.0
-
-                     0.25 0.25 -2.75 1.0
-                     0.25 0.25 -1.25 1.0
-                     -0.25 0.25 -1.25 1.0
-
-                     0.25 0.25 -2.75 1.0
-                     -0.25 0.25 -1.25 1.0
-                     -0.25 0.25 -2.75 1.0
-
-                     0.25 -0.25 -2.75 1.0
-                     -0.25 -0.25 -1.25 1.0
-                     0.25 -0.25 -1.25 1.0
-
-                     0.25 -0.25 -2.75 1.0
-                     -0.25 -0.25 -2.75 1.0
-                     -0.25 -0.25 -1.25 1.0
-
-
-                     0.0 0.0 1.0 1.0
-                     0.0 0.0 1.0 1.0
-                     0.0 0.0 1.0 1.0
-
-                     0.0 0.0 1.0 1.0
-                     0.0 0.0 1.0 1.0
-                     0.0 0.0 1.0 1.0
-
-                     0.8 0.8 0.8 1.0
-                     0.8 0.8 0.8 1.0
-                     0.8 0.8 0.8 1.0
-
-                     0.8 0.8 0.8 1.0
-                     0.8 0.8 0.8 1.0
-                     0.8 0.8 0.8 1.0
-
-                     0.0 1.0 0.0 1.0
-                     0.0 1.0 0.0 1.0
-                     0.0 1.0 0.0 1.0
-
-                     0.0 1.0 0.0 1.0
-                     0.0 1.0 0.0 1.0
-                     0.0 1.0 0.0 1.0
-
-                     0.5 0.5 0.0 1.0
-                     0.5 0.5 0.0 1.0
-                     0.5 0.5 0.0 1.0
-
-                     0.5 0.5 0.0 1.0
-                     0.5 0.5 0.0 1.0
-                     0.5 0.5 0.0 1.0
-
-                     1.0 0.0 0.0 1.0
-                     1.0 0.0 0.0 1.0
-                     1.0 0.0 0.0 1.0
-
-                     1.0 0.0 0.0 1.0
-                     1.0 0.0 0.0 1.0
-                     1.0 0.0 0.0 1.0
-
-                     0.0 1.0 1.0 1.0
-                     0.0 1.0 1.0 1.0
-                     0.0 1.0 1.0 1.0
-
-                     0.0 1.0 1.0 1.0
-                     0.0 1.0 1.0 1.0
-                     0.0 1.0 1.0 1.0]
-        {:keys [the-program] :as state} (init-program
-                                         {:vert "tut04/MatrixPerspective.vert"
-                                          :frag "tut04/StandardColors.frag"})
-        state (assoc state
-                :start-time (System/nanoTime)
-                :vertex-data vertex-data
-                :vertex-buffer-object (gen-buffers vertex-data GL_STATIC_DRAW)
-                :offset-uniform (gl-get-uniform-location the-program "offset"))
-        p-matrix (gl-get-uniform-location the-program "perspectiveMatrix")
-        frustum-scale 1.0
-        z-near 0.5
+  (let [{:keys [the-program] :as state} (init-program
+                                         {:vert "tut05/Standard.vert"
+                                          :frag "tut05/Standard.frag"})
+        state
+        (assoc state
+          :start-time (System/nanoTime)
+          :vertex-data vertex-data
+          :vertex-buffer-object (gen-buffers :float vertex-data GL_STATIC_DRAW)
+          :index-buffer-object (gen-buffers :short index-data GL_STATIC_DRAW)
+          :offset-uniform (gl-get-uniform-location the-program "offset")
+          :p-matrix (gl-get-uniform-location the-program "perspectiveMatrix"))
+        z-near 1.0
         z-far 3.0
         the-matrix [frustum-scale 0 0 0
                     0 frustum-scale 0 0
@@ -144,12 +194,11 @@
                     0 0 (/ (* z-far z-near 2) (- z-near z-far)) 0]
         matrix-buffer (buffer-of :float (float-array the-matrix))]
     (with-program the-program
-      (gl-uniform-matrix4 p-matrix false matrix-buffer))
-    (gl-bind-vertex-array (gl-gen-vertex-arrays))
+      (gl-uniform-matrix4 (:p-matrix state) false matrix-buffer))
     (gl-enable GL_CULL_FACE)
     (gl-cull-face GL_BACK)
     (gl-front-face GL_CW)
-    state))
+    (init-vertex-array-objects state)))
 
 (defn update
   [{:keys [start-time last-frame-timestamp the-program] :as state}]
@@ -164,18 +213,18 @@
       :finished? (kb/key-down? kb/KEY_ESCAPE))))
 
 (defn draw
-  [{:keys [vertex-buffer-object the-program offset-uniform vertex-data]
+  [{:keys [vao1 vao2 the-program offset-uniform]
     :as state}]
   (gl-clear-color 0 0 0 0)
   (gl-clear GL_COLOR_BUFFER_BIT)
   (with-program the-program
-    (gl-uniform2f offset-uniform 0.5 0.5)
-    (gl-bind-buffer GL_ARRAY_BUFFER vertex-buffer-object)
-    (with-vertex-attrib-arrays [0 1]
-      (let [color-data (/ (* 4 (count vertex-data)) 2)]
-        (gl-vertex-attrib-pointer 0 4 GL_FLOAT false 0 0)
-        (gl-vertex-attrib-pointer 1 4 GL_FLOAT false 0 color-data)
-        (gl-draw-arrays GL_TRIANGLES 0 36)))))
+    (with-vertex-array vao1
+      (gl-uniform3f offset-uniform 0.0 0.0 0.0)
+      (gl-draw-elements GL_TRIANGLES (count index-data) GL_UNSIGNED_SHORT 0)
+      (with-vertex-array vao2
+        (gl-uniform3f offset-uniform 0.0 0.0 -1.0)
+        (gl-draw-elements GL_TRIANGLES (count index-data)
+                          GL_UNSIGNED_SHORT 0)))))
 
 (defn tut05
   []

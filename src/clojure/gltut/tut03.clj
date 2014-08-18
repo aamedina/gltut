@@ -65,7 +65,7 @@
         (assoc state
           :start-time (System/nanoTime)
           :vertex-data vertex-data
-          :vertex-buffer-object (gen-buffers vertex-data GL_STATIC_DRAW)
+          :vertex-buffer-object (gen-buffers :float vertex-data GL_STATIC_DRAW)
           :elapsed-time-uniform (gl-get-uniform-location the-program "time")
           :loop-duration (gl-get-uniform-location the-program "loopDuration")
           :frag-loop (gl-get-uniform-location the-program "fragLoopDuration")

@@ -129,11 +129,12 @@
         {:keys [the-program] :as state} (init-program
                                          {:vert "tut04/MatrixPerspective.vert"
                                           :frag "tut04/StandardColors.frag"})
-        state (assoc state
-                :start-time (System/nanoTime)
-                :vertex-data vertex-data
-                :vertex-buffer-object (gen-buffers vertex-data GL_STATIC_DRAW)
-                :offset-uniform (gl-get-uniform-location the-program "offset"))
+        state
+        (assoc state
+          :start-time (System/nanoTime)
+          :vertex-data vertex-data
+          :vertex-buffer-object (gen-buffers :float vertex-data GL_STATIC_DRAW)
+          :offset-uniform (gl-get-uniform-location the-program "offset"))
         p-matrix (gl-get-uniform-location the-program "perspectiveMatrix")
         frustum-scale 1.0
         z-near 0.5

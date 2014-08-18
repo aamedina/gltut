@@ -20,7 +20,10 @@
             [lwcgl.math.vector3d :as vec3]
             [lwcgl.math.vector4d :as vec4]
             [lwcgl.math.quaternion :as q]
-            [clojure.java.io :as io])
+            
+            [clojure.java.io :as io]
+
+            [riddley.walk :as walk])
   (:import (java.nio.file FileSystem StandardWatchEventKinds LinkOption
                           FileSystems StandardWatchEventKinds$StdWatchEventKind)
            (java.nio.file.attribute FileAttribute)))
@@ -89,6 +92,7 @@
   [t element-array]
   `(doto (case ~t
            :byte (buffers/create-byte-buffer (alength ~element-array))
+           :short (buffers/create-short-buffer (alength ~element-array))
            :int (buffers/create-int-buffer (alength ~element-array))
            :long (buffers/create-long-buffer (alength ~element-array))
            :float (buffers/create-float-buffer (alength ~element-array))
@@ -141,8 +145,15 @@
       :position-buffer-object pbo)))
 
 (defn gen-buffers
-  [data usage]
-  (let [data (buffer-of :float (float-array data))
+  [t data usage]
+  (let [array (case t
+                :byte (byte-array data)
+                :short (short-array data)
+                :int (int-array data)
+                :long (long-array data)
+                :float (float-array data)
+                :double (double-array data))
+        data (buffer-of t array)
         vertex-buffer-object (gl-gen-buffers)]
     (gl-bind-buffer GL_ARRAY_BUFFER vertex-buffer-object)
     (gl-buffer-data GL_ARRAY_BUFFER data usage)
@@ -152,3 +163,19 @@
 (defn create-matrix
   [mat]
   (buffer-of :float mat))
+
+(defmacro with-vertex-array
+  [vertex-array & body]
+  (let [has-more? (atom false)]
+    (doseq [form body]
+      (walk/walk-exprs #(and (symbol? %) (= (resolve %) #'with-vertex-array))
+                       (fn [_] (reset! has-more? true))
+                       '#{with-vertex-array gltut.util/with-vertex-array}
+                       form))
+    (if @has-more?
+      `(do (gl-bind-vertex-array ~vertex-array)
+           ~@body)
+      `(let [ret# (do (gl-bind-vertex-array ~vertex-array)
+                      ~@body)]
+         (gl-bind-vertex-array 0)
+         ret#))))

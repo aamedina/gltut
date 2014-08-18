@@ -11,7 +11,8 @@
                   :classifier "natives-osx"
                   :native-prefix ""]
                  [org.lwjgl.lwjgl/lwjgl_util "2.9.2-SNAPSHOT"]
-                 [org.lwjgl.lwjgl/lwjgl_util_applet "2.9.2-SNAPSHOT"]]
+                 [org.lwjgl.lwjgl/lwjgl_util_applet "2.9.2-SNAPSHOT"]
+                 [riddley "0.1.7"]]
   :main ^:skip-aot gltut.core
   :profiles {:uberjar {:aot :all}}
   :source-paths ["src/clojure"]
