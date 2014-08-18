@@ -18,7 +18,7 @@
             [lwcgl.math.matrix4d :as mat4]
             [lwcgl.math.vector2d :as vec2]
             [lwcgl.math.vector3d :as vec3]
-            [lwcgl.math.vector4d :as vec4]
+            [lwcgl.math.vector4d :as vec4 :refer [vec4]]
             [lwcgl.math.quaternion :as q]
             
             [clojure.java.io :as io]
@@ -211,3 +211,15 @@
                 (.-m01 mat) (.-m11 mat) (.-m21 mat) (.-m31 mat)
                 (.-m02 mat) (.-m12 mat) (.-m22 mat) (.-m32 mat)
                 (.-m03 mat) (.-m13 mat) (.-m23 mat) (.-m33 mat)]))
+
+(defprotocol Mix
+  (mix [x y a]))
+
+(extend-protocol Mix
+  Number
+  (mix [x y a]
+    (* (+ x a) (- y x)))
+
+  org.lwjgl.util.vector.Vector4f
+  (mix [x y a]
+    (vec4/add x (vec4/scale (vec4/sub y x (vec4)) a) (vec4))))

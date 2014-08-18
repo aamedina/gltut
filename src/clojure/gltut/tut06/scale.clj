@@ -43,17 +43,16 @@
           :model (gl-get-uniform-location the-program "modelToCameraMatrix")
           :clip (gl-get-uniform-location the-program "cameraToClipMatrix"))
         z-near 1.0
-        z-far 45.0
+        z-far 61.0
         camera-to-clip-matrix (doto (mat4/set-zero! (mat4))
                                 (mat4/set-matrix! 0 0 frustum-scale)
                                 (mat4/set-matrix! 1 1 frustum-scale)
                                 (mat4/set-matrix! 2 2 (/ (+ z-far z-near)
                                                          (- z-near z-far)))
+                                (mat4/set-matrix! 2 3 -1.0)
                                 (mat4/set-matrix! 3 2 (/ (* 2 z-far z-near)
-                                                         (- z-near z-far)))
-                                (mat4/set-matrix! 2 3 -1.0))
-        mat4-buffer (buffers/create-float-buffer (/ (* 16 Float/SIZE)
-                                                    Byte/SIZE))
+                                                         (- z-near z-far))))
+        mat4-buffer (buffers/create-float-buffer mat4-size)
         flipped (fill-and-flip-buffer camera-to-clip-matrix mat4-buffer)
         color-data-offset (* 12 num-vertices)]
     (with-program the-program
@@ -102,8 +101,8 @@
   (with-program the-program
     (with-vertex-array vao
       (let [elapsed-time (/ elapsed-time 1000.0)]
-        (doseq [instance instance-list]
-          (let [transform-matrix (construct-matrix instance elapsed-time)
+        (doseq [obj scalables]
+          (let [transform-matrix (construct-scalable obj elapsed-time)
                 flipped (fill-and-flip-buffer transform-matrix mat4-buffer)]
             (gl-uniform-matrix4 model false flipped)
             (gl-draw-elements GL_TRIANGLES (count index-data)

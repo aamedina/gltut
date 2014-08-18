@@ -103,7 +103,7 @@
     (with-vertex-array vao
       (let [elapsed-time (/ elapsed-time 1000.0)]
         (doseq [instance instance-list]
-          (let [transform-matrix (construct-matrix instance elapsed-time)
+          (let [transform-matrix (construct-offsetable instance elapsed-time)
                 flipped (fill-and-flip-buffer transform-matrix mat4-buffer)]
             (gl-uniform-matrix4 model false flipped)
             (gl-draw-elements GL_TRIANGLES (count index-data)
