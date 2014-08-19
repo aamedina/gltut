@@ -9,8 +9,6 @@
             [gltut.tut06 :refer :all :exclude [rotate-x rotate-y rotate-z]]
             [gltut.util :refer :all]))
 
-(declare rotate-x rotate-y rotate-z)
-
 (def ^:const standard-angle-inc 11.25)
 (def ^:const small-angle-inc 9.0)
 
@@ -48,84 +46,133 @@
      ~@body
      (set! *matrix* (peek *stack*))))
 
+(defn rotate-x
+  [theta]
+  (let [theta (to-radians theta)
+        cosine (cos theta)
+        sine (sin theta)]
+    (doto (mat4)
+      (mat4/set-matrix! 1 1 cosine)
+      (mat4/set-matrix! 2 1 (- sine))
+      (mat4/set-matrix! 1 2 sine)
+      (mat4/set-matrix! 2 2 cosine))))
+
+(defn rotate-y
+  [theta]
+  (let [theta (to-radians theta)
+        cosine (cos theta)
+        sine (sin theta)]
+    (doto (mat4)
+      (mat4/set-matrix! 0 0 cosine)
+      (mat4/set-matrix! 2 0 sine)
+      (mat4/set-matrix! 0 2 (- sine))
+      (mat4/set-matrix! 2 2 cosine))))
+
+(defn rotate-z
+  [theta]
+  (let [theta (to-radians theta)
+        cosine (cos theta)
+        sine (sin theta)]
+    (doto (mat4)
+      (mat4/set-matrix! 0 0 cosine)
+      (mat4/set-matrix! 1 0 (- sine))
+      (mat4/set-matrix! 0 1 sine)
+      (mat4/set-matrix! 1 1 cosine))))
+
+(defn rotate-current-x
+  [theta]
+  (mat4/mul *matrix* (rotate-x theta) *matrix*))
+
+(defn rotate-current-y
+  [theta]
+  (mat4/mul *matrix* (rotate-y theta) *matrix*))
+
+(defn rotate-current-z
+  [theta]
+  (mat4/mul *matrix* (rotate-z theta) *matrix*))
+
+(defn translate
+  [offset]
+  (let [offset-vec4 (vec4 (.-x offset) (.-y offset) (.-z offset) 1.0)
+        translation-mat (mat4/set-row! (mat4) 3 offset-vec4)]
+    (mat4/mul *matrix* translation-mat *matrix*)))
+
+(defn scale
+  [scale-vec]
+  (let [scale-mat (doto (mat4)
+                    (mat4/set-matrix! 0 0 (.-x scale-vec))
+                    (mat4/set-matrix! 1 1 (.-y scale-vec))
+                    (mat4/set-matrix! 2 2 (.-z scale-vec)))]
+    (mat4/mul *matrix* scale-mat *matrix*)))
+
+(defn fill-and-draw-buffer
+  [loc data buffer]
+  (gl-uniform-matrix4 loc false (fill-and-flip-buffer (peek *stack*) buffer))
+  (gl-draw-elements GL_TRIANGLES (count data) GL_UNSIGNED_SHORT 0))
+
 (defn draw-fingers
   [{:keys [armature mat4-buffer model] :as state}]
   (let [{:keys [pos-left-finger ang-finger-open len-finger width-finger
                 ang-lower-finger pos-right-finger pos-wrist]}
         armature]
     (push-matrix
-      (.translate *matrix* pos-left-finger)
-      (mat4/mul *matrix* (rotate-y ang-finger-open) *matrix*)
+      (translate pos-left-finger)
+      (rotate-current-y ang-finger-open)
       
       (push-matrix
-        (.translate *matrix* (vec3 0.0 0.0 (/ len-finger 2.0)))
-        (.scale *matrix* (vec3 (/ width-finger 2.0)
-                               (/ width-finger 2.0)
-                               (/ len-finger 2.0)))
-        (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
-          (gl-uniform-matrix4 model false buf)
-          (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
-                            GL_UNSIGNED_SHORT 0)))
+        (translate (vec3 0.0 0.0 (/ len-finger 2.0)))
+        (scale (vec3 (/ width-finger 2.0)
+                     (/ width-finger 2.0)
+                     (/ len-finger 2.0)))
+        (fill-and-draw-buffer model hierarchy-index-data mat4-buffer))
 
       (push-matrix
-        (.translate *matrix* (vec3 0.0 0.0 len-finger))
-        (mat4/mul *matrix* (rotate-y (- ang-lower-finger)) *matrix*)
+        (translate (vec3 0.0 0.0 len-finger))
+        (rotate-current-y (- ang-lower-finger))
 
         (push-matrix
-          (.translate *matrix* (vec3 0.0 0.0 (/ len-finger 2.0)))
-          (.scale *matrix* (vec3 (/ width-finger 2.0)
-                                 (/ width-finger 2.0)
-                                 (/ len-finger 2.0)))
-          (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
-            (gl-uniform-matrix4 model false buf)
-            (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
-                              GL_UNSIGNED_SHORT 0)))))
+          (translate (vec3 0.0 0.0 (/ len-finger 2.0)))
+          (scale (vec3 (/ width-finger 2.0)
+                       (/ width-finger 2.0)
+                       (/ len-finger 2.0)))
+          (fill-and-draw-buffer model hierarchy-index-data mat4-buffer))))
 
     (push-matrix
-      (.translate *matrix* pos-right-finger)
-      (mat4/mul *matrix* (rotate-y (- ang-finger-open)) *matrix*)
+      (translate pos-right-finger)
+      (rotate-current-y (- ang-finger-open))
       
       (push-matrix
-        (.translate *matrix* (vec3 0.0 0.0 (/ len-finger 2.0)))
-        (.scale *matrix* (vec3 (/ width-finger 2.0)
-                               (/ width-finger 2.0)
-                               (/ len-finger 2.0)))
-        (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
-          (gl-uniform-matrix4 model false buf)
-          (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
-                            GL_UNSIGNED_SHORT 0)))
+        (translate (vec3 0.0 0.0 (/ len-finger 2.0)))
+        (scale (vec3 (/ width-finger 2.0)
+                     (/ width-finger 2.0)
+                     (/ len-finger 2.0)))
+        (fill-and-draw-buffer model hierarchy-index-data mat4-buffer))
 
       (push-matrix
-        (.translate *matrix* (vec3 0.0 0.0 len-finger))
-        (mat4/mul *matrix* (rotate-y ang-lower-finger) *matrix*)
+        (translate (vec3 0.0 0.0 len-finger))
+        (rotate-current-y ang-lower-finger)
 
         (push-matrix
-          (.translate *matrix* (vec3 0.0 0.0 (/ len-finger 2.0)))
-          (.scale *matrix* (vec3 (/ width-finger 2.0)
-                                 (/ width-finger 2.0)
-                                 (/ len-finger 2.0)))
-          (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
-            (gl-uniform-matrix4 model false buf)
-            (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
-                              GL_UNSIGNED_SHORT 0)))))))
+          (translate (vec3 0.0 0.0 (/ len-finger 2.0)))
+          (scale (vec3 (/ width-finger 2.0)
+                       (/ width-finger 2.0)
+                       (/ len-finger 2.0)))
+          (fill-and-draw-buffer model hierarchy-index-data mat4-buffer))))))
 
 (defn draw-wrist
   [{:keys [armature mat4-buffer model] :as state}]
   (let [{:keys [width-wrist ang-wrist-roll ang-wrist-pitch pos-wrist len-wrist]}
         armature]
     (push-matrix
-      (.translate *matrix* pos-wrist)
-      (mat4/mul *matrix* (rotate-z ang-wrist-roll) *matrix*)
-      (mat4/mul *matrix* (rotate-x ang-wrist-pitch) *matrix*)
+      (translate pos-wrist)
+      (rotate-current-z ang-wrist-roll)
+      (rotate-current-x ang-wrist-pitch)
       
       (push-matrix
-        (.scale *matrix* (vec3 (/ width-wrist 2.0)
-                               (/ width-wrist 2.0)
-                               (/ len-wrist 2.0)))
-        (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
-          (gl-uniform-matrix4 model false buf)
-          (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
-                            GL_UNSIGNED_SHORT 0)))
+        (scale (vec3 (/ width-wrist 2.0)
+                     (/ width-wrist 2.0)
+                     (/ len-wrist 2.0)))
+        (fill-and-draw-buffer model hierarchy-index-data mat4-buffer))
 
       (draw-fingers state))))
 
@@ -134,19 +181,16 @@
   (let [{:keys [pos-lower-arm ang-lower-arm len-lower-arm width-lower-arm]}
         armature]
     (push-matrix
-      (.translate *matrix* pos-lower-arm)
-      (mat4/mul *matrix* (rotate-x ang-lower-arm) *matrix*)
+      (translate pos-lower-arm)
+      (rotate-current-x ang-lower-arm)
       
       (push-matrix
-        (.translate *matrix* (vec3 0.0 0.0 (/ len-lower-arm 2.0)))
-        (.scale *matrix* (vec3 (/ width-lower-arm 2.0)
-                               (/ width-lower-arm 2.0)
-                               (/ len-lower-arm 2.0)))
-        (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
-          (gl-uniform-matrix4 model false buf)
-          (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
-                            GL_UNSIGNED_SHORT 0)))
-
+        (translate (vec3 0.0 0.0 (/ len-lower-arm 2.0)))
+        (scale (vec3 (/ width-lower-arm 2.0)
+                     (/ width-lower-arm 2.0)
+                     (/ len-lower-arm 2.0)))
+        (fill-and-draw-buffer model hierarchy-index-data mat4-buffer))
+      
       (draw-wrist state))))
 
 (defn draw-upper-arm
@@ -154,15 +198,12 @@
   (let [{:keys [ang-upper-arm size-upper-arm]}
         armature]
     (push-matrix
-      (mat4/mul *matrix* (rotate-x ang-upper-arm) *matrix*)
+      (rotate-current-x ang-upper-arm)
       
       (push-matrix
-        (.translate *matrix* (vec3 0.0 0.0 (dec (/ size-upper-arm 2.0))))
-        (.scale *matrix* (vec3 1.0 1.0 (/ size-upper-arm 2.0)))
-        (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
-          (gl-uniform-matrix4 model false buf)
-          (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
-                            GL_UNSIGNED_SHORT 0)))
+        (translate (vec3 0.0 0.0 (dec (/ size-upper-arm 2.0))))
+        (scale (vec3 1.0 1.0 (/ size-upper-arm 2.0)))
+        (fill-and-draw-buffer model hierarchy-index-data mat4-buffer))
 
       (draw-lower-arm state))))
 
@@ -173,25 +214,19 @@
     (binding [*matrix* (mat4)
               *stack* []]
       (with-program the-program
-        (with-vertex-array vao          
-          (.translate *matrix* pos-base)
-          (mat4/mul *matrix* (rotate-y ang-base) *matrix*)
+        (with-vertex-array vao
+          (translate pos-base)
+          (rotate-current-y ang-base)
           
           (push-matrix
-            (.translate *matrix* pos-base-left)
-            (.scale *matrix* (vec3 1.0 1.0 scale-base-z))
-            (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
-              (gl-uniform-matrix4 model false buf))
-            (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
-                              GL_UNSIGNED_SHORT 0))
+            (translate pos-base-left)
+            (scale (vec3 1.0 1.0 scale-base-z))
+            (fill-and-draw-buffer model hierarchy-index-data mat4-buffer))
 
           (push-matrix
-            (.translate *matrix* pos-base-right)
-            (.scale *matrix* (vec3 1.0 1.0 scale-base-z))
-            (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
-              (gl-uniform-matrix4 model false buf))
-            (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
-                              GL_UNSIGNED_SHORT 0))
+            (translate pos-base-right)
+            (scale (vec3 1.0 1.0 scale-base-z))
+            (fill-and-draw-buffer model hierarchy-index-data mat4-buffer))
 
           (draw-upper-arm state))))))
 
@@ -199,10 +234,7 @@
   [armature k const increment?]
   (let [last-frame-duration (/ (* *last-frame-duration* 5) 1000.0)]
     (update-in armature [k]
-               (fn [x]
-                 (if increment?
-                   (+ x (* const last-frame-duration))
-                   (+ x (* (- const) last-frame-duration)))))))
+               #(+ % (* (if increment? const (- const)) last-frame-duration)))))
 
 (defn adjust-base
   [armature increment?]
@@ -238,37 +270,4 @@
   [armature increment?]
   (-> armature
       (maybe-increment :ang-finger-open small-angle-inc increment?)
-      (update-in [:ang-finger-open] clamp 9.0 9.0)))
-
-(defn rotate-x
-  [theta]
-  (let [theta (to-radians theta)
-        cosine (cos theta)
-        sine (sin theta)]
-    (doto (mat4)
-      (mat4/set-matrix! 1 1 cosine)
-      (mat4/set-matrix! 2 1 (- sine))
-      (mat4/set-matrix! 1 2 sine)
-      (mat4/set-matrix! 2 2 cosine))))
-
-(defn rotate-y
-  [theta]
-  (let [theta (to-radians theta)
-        cosine (cos theta)
-        sine (sin theta)]
-    (doto (mat4)
-      (mat4/set-matrix! 0 0 cosine)
-      (mat4/set-matrix! 2 0 sine)
-      (mat4/set-matrix! 0 2 (- sine))
-      (mat4/set-matrix! 2 2 cosine))))
-
-(defn rotate-z
-  [theta]
-  (let [theta (to-radians theta)
-        cosine (cos theta)
-        sine (sin theta)]
-    (doto (mat4)
-      (mat4/set-matrix! 0 0 cosine)
-      (mat4/set-matrix! 1 0 (- sine))
-      (mat4/set-matrix! 0 1 sine)
-      (mat4/set-matrix! 1 1 cosine))))
+      (update-in [:ang-finger-open] clamp 9.0 90.0)))

@@ -1,5 +1,5 @@
 (ns gltut.tut06.scale
-  (:require [lwcgl.core :refer [sketch]]
+  (:require [lwcgl.core :refer :all]
             [lwcgl.buffers :as buffers]
             [lwcgl.openal :as al]
             [lwcgl.sys :as sys]
@@ -108,16 +108,11 @@
             (gl-draw-elements GL_TRIANGLES (count index-data)
                               GL_UNSIGNED_SHORT 0)))))))
 
-(defn tut06
-  []
-  (when-not (d/created?)
-    (future
-      (sketch
-       :setup (var setup)
-       :update (var update)
-       :draw (var draw)
-       :dispose (var tut01/dispose)
-       :frame-rate 60
-       :size [500 500]
-       :render-in-background? true
-       :title "tut06"))))
+(defsketch tut06
+  :setup (var setup)
+  :update (var update)
+  :draw (var draw)
+  :dispose (var tut01/dispose)
+  :frame-rate 60
+  :size [500 500]
+  :title "tut06")

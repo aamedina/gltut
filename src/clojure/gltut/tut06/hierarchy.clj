@@ -76,55 +76,59 @@
                                 (mat4/set-matrix! 3 2 (/ (* 2 z-far z-near)
                                                          (- z-near z-far))))
         mat4-buffer (buffers/create-float-buffer mat4-size)
-        flipped (fill-and-flip-buffer camera-to-clip-matrix mat4-buffer)]
+        buf (fill-and-flip-buffer camera-to-clip-matrix mat4-buffer)]
     (with-program the-program
-      (gl-uniform-matrix4 (:clip state) false flipped))
+      (gl-uniform-matrix4 (:clip state) false buf))
 
-    (gl-enable GL_CULL_FACE)
-    (gl-cull-face GL_BACK)
-    (gl-front-face GL_CW)
+    (let [new-state (initialize-vao state)]
+      
+      (gl-enable GL_CULL_FACE)
+      (gl-cull-face GL_BACK)
+      (gl-front-face GL_CW)
 
-    (gl-enable GL_DEPTH_TEST)
-    (gl-depth-mask true)
-    (gl-depth-func GL_LEQUAL)
-    (gl-depth-range 0.0 1.0)
-    
-    (-> (assoc state
-          :mat4-buffer mat4-buffer
-          :camera-to-clip-matrix camera-to-clip-matrix
-          :armature (arm/armature))
-        initialize-vao)))
+      (gl-enable GL_DEPTH_TEST)
+      (gl-depth-mask true)
+      (gl-depth-func GL_LEQUAL)
+      (gl-depth-range 0.0 1.0)
+      
+      (assoc new-state
+        :mat4-buffer mat4-buffer
+        :camera-to-clip-matrix camera-to-clip-matrix
+        :armature (arm/armature)))))
 
-(defn update
-  [{:keys [armature] :as state}]
-  (do-when
+(defn update-armature
+  [state]
+  (cond-> state
     (kb/key-down? kb/KEY_A) (update-in [:armature] arm/adjust-base false)
     (kb/key-down? kb/KEY_D) (update-in [:armature] arm/adjust-base true)
     
     (kb/key-down? kb/KEY_W) (update-in [:armature] arm/adjust-upper-arm false)
-    (kb/key-down? kb/KEY_S) (arm/adjust-upper-arm armature true)
+    (kb/key-down? kb/KEY_S) (update-in [:armature] arm/adjust-upper-arm true)
     
-    (kb/key-down? kb/KEY_R) (arm/adjust-lower-arm armature false)
-    (kb/key-down? kb/KEY_F) (arm/adjust-lower-arm armature true)
+    (kb/key-down? kb/KEY_R) (update-in [:armature] arm/adjust-lower-arm false)
+    (kb/key-down? kb/KEY_F) (update-in [:armature] arm/adjust-lower-arm true)
 
-    (kb/key-down? kb/KEY_T) (arm/adjust-wrist-pitch armature false)
-    (kb/key-down? kb/KEY_G) (arm/adjust-wrist-pitch armature true)
+    (kb/key-down? kb/KEY_T) (update-in [:armature] arm/adjust-wrist-pitch false)
+    (kb/key-down? kb/KEY_G) (update-in [:armature] arm/adjust-wrist-pitch true)
 
-    (kb/key-down? kb/KEY_Z) (arm/adjust-wrist-roll armature false)
-    (kb/key-down? kb/KEY_C) (arm/adjust-wrist-roll armature true)
+    (kb/key-down? kb/KEY_Z) (update-in [:armature] arm/adjust-wrist-roll false)
+    (kb/key-down? kb/KEY_C) (update-in [:armature] arm/adjust-wrist-roll true)
 
-    (kb/key-down? kb/KEY_Q) (arm/adjust-finger-open armature true)
-    (kb/key-down? kb/KEY_E) (arm/adjust-finger-open armature false)
+    (kb/key-down? kb/KEY_Q) (update-in [:armature] arm/adjust-finger-open true)
+    (kb/key-down? kb/KEY_E) (update-in [:armature] arm/adjust-finger-open false)
+    ))
 
-    (kb/key-down? kb/KEY_SPACE)
-    (println (select-keys armature
-                          [:ang-base :ang-upper-arm
-                           :ang-lower-arm :ang-wrist-pitch
-                           :ang-wrist-roll :ang-finger-open])))
-  (reduce (fn [state key]
-            (cond-> state
-              (kb/key-down? kb/KEY_ESCAPE) (assoc :finished? true)))
-          state (key-presses)))
+(defn update
+  [{:keys [armature] :as state}]
+  (let [armature-keys (select-keys armature [:ang-base :ang-upper-arm
+                                             :ang-lower-arm :ang-wrist-pitch
+                                             :ang-wrist-roll :ang-finger-open])]
+    (reduce (fn [state key]
+              (do-when
+                (kb/key-down? kb/KEY_SPACE) (println armature-keys))
+              (cond-> state
+                (kb/key-down? kb/KEY_ESCAPE) (assoc :finished? true)))
+            (update-armature state) (key-presses))))
 
 (defn draw
   [{:keys [the-program model mat4-buffer armature]
