@@ -1,4 +1,4 @@
-(ns gltut.tut06.rotation
+(ns gltut.tut06.hierarchy
   (:require [lwcgl.core :refer :all]
             [lwcgl.buffers :as buffers]
             [lwcgl.openal :as al]
@@ -7,7 +7,7 @@
             
             [lwcgl.opengl :as gl]
             [lwcgl.opengl.v41 :refer :all]
-            [lwcgl.opengl.display :as d :refer [width height]]            
+            [lwcgl.opengl.display :as d :refer [width height]]
             
             [lwcgl.input.keyboard :as kb]
             [lwcgl.input.mouse :as mouse]
@@ -22,11 +22,33 @@
             [lwcgl.math.quaternion :as q]
             
             [clojure.java.io :as io]
-
+            
             [gltut.util :refer :all]
             [gltut.tut01 :as tut01]
-            [gltut.tut06 :refer :all])
+            [gltut.tut06 :refer :all]
+            [gltut.tut06.armature :as arm])
   (:import (java.nio FloatBuffer)))
+
+(defn initialize-vao
+  [state]
+  (let [color-data-offset (* 12 num-hierarchy-vertices)
+        vertex-buffer-object (gen-buffers :float vertex-data GL_STATIC_DRAW)
+        index-buffer-object (gen-buffers :short index-data GL_STATIC_DRAW)
+        vao (gl-gen-vertex-arrays)]
+    
+    (with-vertex-array vao
+      (gl-bind-buffer GL_ARRAY_BUFFER vertex-buffer-object)
+      (gl-enable-vertex-attrib-array (:position-attrib state))
+      (gl-enable-vertex-attrib-array (:color-attrib state))
+      (gl-vertex-attrib-pointer (:position-attrib state) 3 GL_FLOAT false 0 0)
+      (gl-vertex-attrib-pointer (:color-attrib state) 4 GL_FLOAT false 0
+                                color-data-offset)
+      (gl-bind-buffer GL_ELEMENT_ARRAY_BUFFER index-buffer-object))
+    
+    (assoc state
+      :vao vao
+      :vertex-buffer-object vertex-buffer-object
+      :index-buffer-object index-buffer-object)))
 
 (defn setup
   []
@@ -36,14 +58,13 @@
         {:keys [the-program] :as state} (init-program shaders)
         state
         (assoc state
-          :start-time (System/nanoTime)
           :vertex-data vertex-data
-          :vertex-buffer-object (gen-buffers :float vertex-data GL_STATIC_DRAW)
-          :index-buffer-object (gen-buffers :short index-data GL_STATIC_DRAW)
+          :position-attrib (gl-get-attrib-location the-program "position")
+          :color-attrib (gl-get-attrib-location the-program "color")
           :model (gl-get-uniform-location the-program "modelToCameraMatrix")
           :clip (gl-get-uniform-location the-program "cameraToClipMatrix"))
         z-near 1.0
-        z-far 61.0
+        z-far 100.0
         camera-to-clip-matrix (doto (mat4/set-zero! (mat4))
                                 (mat4/set-matrix! 0 0 frustum-scale)
                                 (mat4/set-matrix! 1 1 frustum-scale)
@@ -53,66 +74,51 @@
                                 (mat4/set-matrix! 3 2 (/ (* 2 z-far z-near)
                                                          (- z-near z-far))))
         mat4-buffer (buffers/create-float-buffer mat4-size)
-        flipped (fill-and-flip-buffer camera-to-clip-matrix mat4-buffer)
-        color-data-offset (* 12 num-vertices)]
+        flipped (fill-and-flip-buffer camera-to-clip-matrix mat4-buffer)]
     (with-program the-program
       (gl-uniform-matrix4 (:clip state) false flipped))
-    (let [vao (gl-gen-vertex-arrays)]
-      (with-vertex-array vao
-        (gl-bind-buffer GL_ARRAY_BUFFER (:vertex-buffer-object state))
-        (gl-enable-vertex-attrib-array 0)
-        (gl-enable-vertex-attrib-array 1)
-        (gl-vertex-attrib-pointer 0 3 GL_FLOAT false 0 0)
-        (gl-vertex-attrib-pointer 1 4 GL_FLOAT false 0 color-data-offset)
-        (gl-bind-buffer GL_ELEMENT_ARRAY_BUFFER (:index-buffer-object state)))
 
-      (gl-enable GL_CULL_FACE)
-      (gl-cull-face GL_BACK)
-      (gl-front-face GL_CW)
+    (gl-enable GL_CULL_FACE)
+    (gl-cull-face GL_BACK)
+    (gl-front-face GL_CW)
 
-      (gl-enable GL_DEPTH_TEST)
-      (gl-depth-mask true)
-      (gl-depth-func GL_LEQUAL)
-      (gl-depth-range 0.0 1.0)   
-
-      (assoc state
-        :mat4-buffer mat4-buffer
-        :camera-to-clip-matrix camera-to-clip-matrix
-        :vao vao))))
+    (gl-enable GL_DEPTH_TEST)
+    (gl-depth-mask true)
+    (gl-depth-func GL_LEQUAL)
+    (gl-depth-range 0.0 1.0)
+    
+    (-> (assoc state
+          :mat4-buffer mat4-buffer
+          :camera-to-clip-matrix camera-to-clip-matrix
+          :armature (armature))
+        initialize-vao)))
 
 (defn update
-  [{:keys [start-time last-frame-timestamp the-program] :as state}]
-  (let [elapsed-time (/ (- (System/nanoTime) start-time) (float 1000000.0))
-        now (System/nanoTime)
-        last-frame-duration (/ (- now (or last-frame-timestamp 0))
-                               (float 1000000.0))]
-    (assoc state
-      :elapsed-time elapsed-time
-      :last-frame-duration last-frame-duration
-      :last-frame-timestamp now
-      :finished? (kb/key-down? kb/KEY_ESCAPE))))
+  [{:keys [] :as state}]
+  (reduce (fn [state key]
+            (cond-> state
+              (kb/key-down? kb/KEY_ESCAPE) (assoc :finished? true)))
+          state (key-presses)))
 
 (defn draw
-  [{:keys [vao the-program offset-uniform elapsed-time model mat4-buffer]
+  [{:keys [the-program model mat4-buffer armature]
     :as state}]
   (gl-clear-color 0.0 0.0 0.0 0.0)
   (gl-clear-depth 1.0)
   (gl-clear (bit-or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
-  (with-program the-program
-    (with-vertex-array vao
-      (let [elapsed-time (/ elapsed-time 1000.0)]
-        (doseq [obj rotatables]
-          (let [transform-matrix (construct-rotatable obj elapsed-time)
-                flipped (fill-and-flip-buffer transform-matrix mat4-buffer)]
-            (gl-uniform-matrix4 model false flipped)
-            (gl-draw-elements GL_TRIANGLES (count index-data)
-                              GL_UNSIGNED_SHORT 0)))))))
+  (arm/draw state))
+
+(defn resize
+  [state]
+  (gl-viewport 0 0
+               (* (width) (d/pixel-scale-factor))
+               (* (height) (d/pixel-scale-factor))))
 
 (defsketch tut06
   :setup setup
   :update update
   :draw draw
-  :dispose tut01/dispose
+  :resize resize
   :frame-rate 60
-  :size [500 500]
+  :size [700 700]
   :title "tut06")

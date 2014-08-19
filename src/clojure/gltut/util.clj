@@ -34,7 +34,7 @@
   (println "-----------------------------------------------------------")
   (printf "%-18s%s\n" "Running:" (ns-name ns))
   (printf "%-18s%s\n" "OpenGL version:" (gl-get-string GL_VERSION))
-  (when-not (:OpenGL33 *capabilities*)
+  (when-not (:OpenGL33 (gl-capabilities))
     (println "You must have at least OpenGL 3.3 to run this tutorial."))
   (flush))
 
@@ -241,3 +241,10 @@
    (.-m01 mat) (.-m11 mat) (.-m21 mat) (.-m31 mat)
    (.-m02 mat) (.-m12 mat) (.-m22 mat) (.-m32 mat)
    (.-m03 mat) (.-m13 mat) (.-m23 mat) (.-m33 mat)])
+
+(defn clamp
+  [val min max]
+  (cond
+    (< val min) min
+    (> val max) max
+    :else val))

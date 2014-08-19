@@ -6,15 +6,19 @@
   :dependencies [[org.clojure/clojure "1.7.0-alpha1"]
                  [org.clojure/core.async "0.1.319.0-6b1aca-alpha"]
                  [lwcgl "0.1.0-SNAPSHOT"]
-                 [org.lwjgl.lwjgl/lwjgl "2.9.2-SNAPSHOT"]
                  [org.lwjgl.lwjgl/lwjgl-platform "2.9.2-SNAPSHOT"
-                  :classifier "natives-osx"
+                  :classifier ~(cond
+                                 (= (System/getProperty "os.name") "Mac OS X")
+                                 "natives-osx"
+                                 (= (System/getProperty "os.name") "Windows")
+                                 "natives-windows"
+                                 (= (System/getProperty "os.name") "Linux")
+                                 "natives-linux")
                   :native-prefix ""]
-                 [org.lwjgl.lwjgl/lwjgl_util "2.9.2-SNAPSHOT"]
-                 [org.lwjgl.lwjgl/lwjgl_util_applet "2.9.2-SNAPSHOT"]
                  [riddley "0.1.7"]
                  [criterium "0.4.3"]]
   :main ^:skip-aot gltut.core
   :profiles {:uberjar {:aot :all}}
   :source-paths ["src/clojure"]
-  :resource-paths ["resources" "src/glsl"])
+  :resource-paths ["resources" "src/glsl"]
+  :jvm-opts ^:replace ["-Dorg.lwjgl.opengl.Display.enableHighDPI=true"])
