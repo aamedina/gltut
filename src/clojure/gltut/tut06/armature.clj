@@ -110,54 +110,58 @@
   (gl-uniform-matrix4 loc false (fill-and-flip-buffer (peek *stack*) buffer))
   (gl-draw-elements GL_TRIANGLES (count data) GL_UNSIGNED_SHORT 0))
 
+(defn draw-left-finger
+  [{:keys [armature mat4-buffer model] :as state}]
+  (push-matrix
+    (translate (:pos-left-finger armature))
+    (rotate-current-y (:ang-finger-open armature))
+    
+    (push-matrix
+      (translate (vec3 0.0 0.0 (/ (:len-finger armature) 2.0)))
+      (scale (vec3 (/ (:width-finger armature) 2.0)
+                   (/ (:width-finger armature) 2.0)
+                   (/ (:len-finger armature) 2.0)))
+      (fill-and-draw-buffer model hierarchy-index-data mat4-buffer))
+
+    (push-matrix
+      (translate (vec3 0.0 0.0 (:len-finger armature)))
+      (rotate-current-y (- (:ang-lower-finger armature)))
+
+      (push-matrix
+        (translate (vec3 0.0 0.0 (/ (:len-finger armature) 2.0)))
+        (scale (vec3 (/ (:width-finger armature) 2.0)
+                     (/ (:width-finger armature) 2.0)
+                     (/ (:len-finger armature) 2.0)))
+        (fill-and-draw-buffer model hierarchy-index-data mat4-buffer)))))
+
+(defn draw-right-finger
+  [{:keys [armature mat4-buffer model] :as state}]
+  (push-matrix
+    (translate (:pos-right-finger armature))
+    (rotate-current-y (- (:ang-finger-open armature)))
+    
+    (push-matrix
+      (translate (vec3 0.0 0.0 (/ (:len-finger armature) 2.0)))
+      (scale (vec3 (/ (:width-finger armature) 2.0)
+                   (/ (:width-finger armature) 2.0)
+                   (/ (:len-finger armature) 2.0)))
+      (fill-and-draw-buffer model hierarchy-index-data mat4-buffer))
+
+    (push-matrix
+      (translate (vec3 0.0 0.0 (:len-finger armature)))
+      (rotate-current-y (:ang-lower-finger armature))
+
+      (push-matrix
+        (translate (vec3 0.0 0.0 (/ (:len-finger armature) 2.0)))
+        (scale (vec3 (/ (:width-finger armature) 2.0)
+                     (/ (:width-finger armature) 2.0)
+                     (/ (:len-finger armature) 2.0)))
+        (fill-and-draw-buffer model hierarchy-index-data mat4-buffer)))))
+
 (defn draw-fingers
   [{:keys [armature mat4-buffer model] :as state}]
-  (let [{:keys [pos-left-finger ang-finger-open len-finger width-finger
-                ang-lower-finger pos-right-finger pos-wrist]}
-        armature]
-    (push-matrix
-      (translate pos-left-finger)
-      (rotate-current-y ang-finger-open)
-      
-      (push-matrix
-        (translate (vec3 0.0 0.0 (/ len-finger 2.0)))
-        (scale (vec3 (/ width-finger 2.0)
-                     (/ width-finger 2.0)
-                     (/ len-finger 2.0)))
-        (fill-and-draw-buffer model hierarchy-index-data mat4-buffer))
-
-      (push-matrix
-        (translate (vec3 0.0 0.0 len-finger))
-        (rotate-current-y (- ang-lower-finger))
-
-        (push-matrix
-          (translate (vec3 0.0 0.0 (/ len-finger 2.0)))
-          (scale (vec3 (/ width-finger 2.0)
-                       (/ width-finger 2.0)
-                       (/ len-finger 2.0)))
-          (fill-and-draw-buffer model hierarchy-index-data mat4-buffer))))
-
-    (push-matrix
-      (translate pos-right-finger)
-      (rotate-current-y (- ang-finger-open))
-      
-      (push-matrix
-        (translate (vec3 0.0 0.0 (/ len-finger 2.0)))
-        (scale (vec3 (/ width-finger 2.0)
-                     (/ width-finger 2.0)
-                     (/ len-finger 2.0)))
-        (fill-and-draw-buffer model hierarchy-index-data mat4-buffer))
-
-      (push-matrix
-        (translate (vec3 0.0 0.0 len-finger))
-        (rotate-current-y ang-lower-finger)
-
-        (push-matrix
-          (translate (vec3 0.0 0.0 (/ len-finger 2.0)))
-          (scale (vec3 (/ width-finger 2.0)
-                       (/ width-finger 2.0)
-                       (/ len-finger 2.0)))
-          (fill-and-draw-buffer model hierarchy-index-data mat4-buffer))))))
+  (draw-left-finger state)
+  (draw-right-finger state))
 
 (defn draw-wrist
   [{:keys [armature mat4-buffer model] :as state}]
