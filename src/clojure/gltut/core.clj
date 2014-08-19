@@ -5,8 +5,9 @@
             [gltut.tut03 :refer [tut03]]
             [gltut.tut04 :refer [tut04]]
             [gltut.tut05.overlap :as overlap]
-            [gltut.tut06.translation :as trans]))
+            [gltut.tut06.translation :as trans]
+            [gltut.tut06.hierarchy :as h]))
 
 (defn -main
   [& args]
-  (trans/tut06))
+  (h/tut06))

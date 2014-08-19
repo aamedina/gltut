@@ -90,7 +90,7 @@
     (-> (assoc state
           :mat4-buffer mat4-buffer
           :camera-to-clip-matrix camera-to-clip-matrix
-          :armature (armature))
+          :armature (arm/armature))
         initialize-vao)))
 
 (defn update

@@ -55,7 +55,7 @@
         armature]
     (push-matrix
       (.translate *matrix* pos-wrist)
-      (.mul *matrix* (rotate-y ang-finger-open) *matrix*)
+      (mat4/mul *matrix* (rotate-y ang-finger-open) *matrix*)
       
       (push-matrix
         (.translate *matrix* (vec3 0.0 0.0 (/ len-finger 2.0)))
@@ -69,7 +69,7 @@
 
       (push-matrix
         (.translate *matrix* (vec3 0.0 0.0 len-finger))
-        (.mul *matrix* (rotate-y (- ang-lower-finger)) *matrix*)
+        (mat4/mul *matrix* (rotate-y (- ang-lower-finger)) *matrix*)
         (.scale *matrix* (vec3 (/ width-finger 2.0)
                                (/ width-finger 2.0)
                                (/ len-finger 2.0)))
@@ -80,7 +80,7 @@
 
     (push-matrix
       (.translate *matrix* pos-right-finger)
-      (.mul *matrix* (rotate-y (- ang-finger-open)) *matrix*)
+      (mat4/mul *matrix* (rotate-y (- ang-finger-open)) *matrix*)
       
       (push-matrix
         (.translate *matrix* (vec3 0.0 0.0 (/ len-finger 2.0)))
@@ -94,7 +94,7 @@
 
       (push-matrix
         (.translate *matrix* (vec3 0.0 0.0 len-finger))
-        (.mul *matrix* (rotate-y ang-lower-finger) *matrix*)
+        (mat4/mul *matrix* (rotate-y ang-lower-finger) *matrix*)
 
         (push-matrix
           (.translate *matrix* (vec3 0.0 0.0 (/ len-finger 2.0)))
@@ -112,8 +112,8 @@
         armature]
     (push-matrix
       (.translate *matrix* pos-wrist)
-      (.mul *matrix* (rotate-z ang-wrist-roll) *matrix*)
-      (.mul *matrix* (rotate-x ang-wrist-pitch) *matrix*)
+      (mat4/mul *matrix* (rotate-z ang-wrist-roll) *matrix*)
+      (mat4/mul *matrix* (rotate-x ang-wrist-pitch) *matrix*)
       
       (push-matrix
         (.scale *matrix* (vec3 (/ width-wrist 2.0)
@@ -132,7 +132,7 @@
         armature]
     (push-matrix
       (.translate *matrix* pos-lower-arm)
-      (.mul *matrix* (rotate-x ang-lower-arm))
+      (mat4/mul *matrix* (rotate-x ang-lower-arm) *matrix*)
       
       (push-matrix
         (.translate *matrix* (vec3 0.0 0.0 (/ len-lower-arm 2.0)))
@@ -151,7 +151,7 @@
   (let [{:keys [ang-upper-arm size-upper-arm]}
         armature]
     (push-matrix
-      (.mul *matrix* (rotate-x ang-upper-arm))
+      (mat4/mul *matrix* (rotate-x ang-upper-arm) *matrix*)
       
       (push-matrix
         (.translate *matrix* (vec3 0.0 0.0 (dec (/ size-upper-arm 2.0))))
@@ -172,7 +172,7 @@
       (with-program the-program
         (with-vertex-array vao          
           (.translate *matrix* pos-base)
-          (.mul *matrix* (rotate-y ang-base) *matrix*)
+          (mat4/mul *matrix* (rotate-y ang-base) *matrix*)
           
           (push-matrix
             (println *matrix*)
