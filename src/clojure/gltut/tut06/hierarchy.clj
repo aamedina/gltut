@@ -3,6 +3,7 @@
             [lwcgl.buffers :as buffers]
             [lwcgl.openal :as al]
             [lwcgl.sys :as sys]
+            [lwcgl.macros :refer [do-when]]
             [lwcgl.util.glu :refer :all]
             
             [lwcgl.opengl :as gl]
@@ -32,8 +33,10 @@
 (defn initialize-vao
   [state]
   (let [color-data-offset (* 12 num-hierarchy-vertices)
-        vertex-buffer-object (gen-buffers :float vertex-data GL_STATIC_DRAW)
-        index-buffer-object (gen-buffers :short index-data GL_STATIC_DRAW)
+        vertex-buffer-object (gen-buffers :float hierarchy-vertex-data
+                                          GL_STATIC_DRAW)
+        index-buffer-object (gen-buffers :short hierarchy-index-data
+                                         GL_STATIC_DRAW)
         vao (gl-gen-vertex-arrays)]
     
     (with-vertex-array vao
@@ -58,7 +61,6 @@
         {:keys [the-program] :as state} (init-program shaders)
         state
         (assoc state
-          :vertex-data vertex-data
           :position-attrib (gl-get-attrib-location the-program "position")
           :color-attrib (gl-get-attrib-location the-program "color")
           :model (gl-get-uniform-location the-program "modelToCameraMatrix")
@@ -94,7 +96,31 @@
         initialize-vao)))
 
 (defn update
-  [{:keys [] :as state}]
+  [{:keys [armature] :as state}]
+  (do-when
+    (kb/key-down? kb/KEY_A) (update-in [:armature] arm/adjust-base false)
+    (kb/key-down? kb/KEY_D) (update-in [:armature] arm/adjust-base true)
+    
+    (kb/key-down? kb/KEY_W) (update-in [:armature] arm/adjust-upper-arm false)
+    (kb/key-down? kb/KEY_S) (arm/adjust-upper-arm armature true)
+    
+    (kb/key-down? kb/KEY_R) (arm/adjust-lower-arm armature false)
+    (kb/key-down? kb/KEY_F) (arm/adjust-lower-arm armature true)
+
+    (kb/key-down? kb/KEY_T) (arm/adjust-wrist-pitch armature false)
+    (kb/key-down? kb/KEY_G) (arm/adjust-wrist-pitch armature true)
+
+    (kb/key-down? kb/KEY_Z) (arm/adjust-wrist-roll armature false)
+    (kb/key-down? kb/KEY_C) (arm/adjust-wrist-roll armature true)
+
+    (kb/key-down? kb/KEY_Q) (arm/adjust-finger-open armature true)
+    (kb/key-down? kb/KEY_E) (arm/adjust-finger-open armature false)
+
+    (kb/key-down? kb/KEY_SPACE)
+    (println (select-keys armature
+                          [:ang-base :ang-upper-arm
+                           :ang-lower-arm :ang-wrist-pitch
+                           :ang-wrist-roll :ang-finger-open])))
   (reduce (fn [state key]
             (cond-> state
               (kb/key-down? kb/KEY_ESCAPE) (assoc :finished? true)))
@@ -109,7 +135,13 @@
   (arm/draw state))
 
 (defn resize
-  [state]
+  [{:keys [the-program camera-to-clip-matrix clip mat4-buffer] :as state}]
+  (doto camera-to-clip-matrix
+    (mat4/set-matrix! 0 0 (/ frustum-scale (/ (width) (height))))
+    (mat4/set-matrix! 1 1 frustum-scale))
+  (with-program the-program
+    (gl-uniform-matrix4 clip false (fill-and-flip-buffer camera-to-clip-matrix
+                                                         mat4-buffer)))
   (gl-viewport 0 0
                (* (width) (d/pixel-scale-factor))
                (* (height) (d/pixel-scale-factor))))
@@ -121,4 +153,5 @@
   :resize resize
   :frame-rate 60
   :size [700 700]
-  :title "tut06")
+  :title "tut06"
+  :features #{:resizable})

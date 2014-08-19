@@ -49,12 +49,12 @@
      (set! *matrix* (peek *stack*))))
 
 (defn draw-fingers
-  [{:keys [armature mat4buffer model] :as state}]
+  [{:keys [armature mat4-buffer model] :as state}]
   (let [{:keys [pos-left-finger ang-finger-open len-finger width-finger
                 ang-lower-finger pos-right-finger pos-wrist]}
         armature]
     (push-matrix
-      (.translate *matrix* pos-wrist)
+      (.translate *matrix* pos-left-finger)
       (mat4/mul *matrix* (rotate-y ang-finger-open) *matrix*)
       
       (push-matrix
@@ -62,7 +62,7 @@
         (.scale *matrix* (vec3 (/ width-finger 2.0)
                                (/ width-finger 2.0)
                                (/ len-finger 2.0)))
-        (let [buf (fill-and-flip-buffer (peek *stack*) mat4buffer)]
+        (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
           (gl-uniform-matrix4 model false buf)
           (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
                             GL_UNSIGNED_SHORT 0)))
@@ -70,13 +70,16 @@
       (push-matrix
         (.translate *matrix* (vec3 0.0 0.0 len-finger))
         (mat4/mul *matrix* (rotate-y (- ang-lower-finger)) *matrix*)
-        (.scale *matrix* (vec3 (/ width-finger 2.0)
-                               (/ width-finger 2.0)
-                               (/ len-finger 2.0)))
-        (let [buf (fill-and-flip-buffer (peek *stack*) mat4buffer)]
-          (gl-uniform-matrix4 model false buf)
-          (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
-                            GL_UNSIGNED_SHORT 0))))
+
+        (push-matrix
+          (.translate *matrix* (vec3 0.0 0.0 (/ len-finger 2.0)))
+          (.scale *matrix* (vec3 (/ width-finger 2.0)
+                                 (/ width-finger 2.0)
+                                 (/ len-finger 2.0)))
+          (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
+            (gl-uniform-matrix4 model false buf)
+            (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
+                              GL_UNSIGNED_SHORT 0)))))
 
     (push-matrix
       (.translate *matrix* pos-right-finger)
@@ -87,7 +90,7 @@
         (.scale *matrix* (vec3 (/ width-finger 2.0)
                                (/ width-finger 2.0)
                                (/ len-finger 2.0)))
-        (let [buf (fill-and-flip-buffer (peek *stack*) mat4buffer)]
+        (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
           (gl-uniform-matrix4 model false buf)
           (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
                             GL_UNSIGNED_SHORT 0)))
@@ -101,13 +104,13 @@
           (.scale *matrix* (vec3 (/ width-finger 2.0)
                                  (/ width-finger 2.0)
                                  (/ len-finger 2.0)))
-          (let [buf (fill-and-flip-buffer (peek *stack*) mat4buffer)]
+          (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
             (gl-uniform-matrix4 model false buf)
             (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
                               GL_UNSIGNED_SHORT 0)))))))
 
 (defn draw-wrist
-  [{:keys [armature mat4buffer model] :as state}]
+  [{:keys [armature mat4-buffer model] :as state}]
   (let [{:keys [width-wrist ang-wrist-roll ang-wrist-pitch pos-wrist len-wrist]}
         armature]
     (push-matrix
@@ -119,7 +122,7 @@
         (.scale *matrix* (vec3 (/ width-wrist 2.0)
                                (/ width-wrist 2.0)
                                (/ len-wrist 2.0)))
-        (let [buf (fill-and-flip-buffer (peek *stack*) mat4buffer)]
+        (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
           (gl-uniform-matrix4 model false buf)
           (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
                             GL_UNSIGNED_SHORT 0)))
@@ -127,7 +130,7 @@
       (draw-fingers state))))
 
 (defn draw-lower-arm
-  [{:keys [armature model mat4buffer] :as state}]
+  [{:keys [armature model mat4-buffer] :as state}]
   (let [{:keys [pos-lower-arm ang-lower-arm len-lower-arm width-lower-arm]}
         armature]
     (push-matrix
@@ -139,7 +142,7 @@
         (.scale *matrix* (vec3 (/ width-lower-arm 2.0)
                                (/ width-lower-arm 2.0)
                                (/ len-lower-arm 2.0)))
-        (let [buf (fill-and-flip-buffer (peek *stack*) mat4buffer)]
+        (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
           (gl-uniform-matrix4 model false buf)
           (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
                             GL_UNSIGNED_SHORT 0)))
@@ -147,7 +150,7 @@
       (draw-wrist state))))
 
 (defn draw-upper-arm
-  [{:keys [armature model mat4buffer] :as state}]
+  [{:keys [armature model mat4-buffer] :as state}]
   (let [{:keys [ang-upper-arm size-upper-arm]}
         armature]
     (push-matrix
@@ -155,8 +158,8 @@
       
       (push-matrix
         (.translate *matrix* (vec3 0.0 0.0 (dec (/ size-upper-arm 2.0))))
-        (.scale *matrix* (vec3 0.0 0.0 (/ size-upper-arm 2.0)))
-        (let [buf (fill-and-flip-buffer (peek *stack*) mat4buffer)]
+        (.scale *matrix* (vec3 1.0 1.0 (/ size-upper-arm 2.0)))
+        (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
           (gl-uniform-matrix4 model false buf)
           (gl-draw-elements GL_TRIANGLES (count hierarchy-index-data)
                             GL_UNSIGNED_SHORT 0)))
@@ -175,7 +178,6 @@
           (mat4/mul *matrix* (rotate-y ang-base) *matrix*)
           
           (push-matrix
-            (println *matrix*)
             (.translate *matrix* pos-base-left)
             (.scale *matrix* (vec3 1.0 1.0 scale-base-z))
             (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
@@ -184,7 +186,6 @@
                               GL_UNSIGNED_SHORT 0))
 
           (push-matrix
-            (println *matrix*)
             (.translate *matrix* pos-base-right)
             (.scale *matrix* (vec3 1.0 1.0 scale-base-z))
             (let [buf (fill-and-flip-buffer (peek *stack*) mat4-buffer)]
