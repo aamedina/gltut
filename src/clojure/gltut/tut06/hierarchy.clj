@@ -14,13 +14,8 @@
             [lwcgl.input.mouse :as mouse]
             
             [lwcgl.math :refer :all :exclude [min max]]
-            [lwcgl.math.matrix2d :as mat2 :refer [mat2]]
-            [lwcgl.math.matrix3d :as mat3 :refer [mat3]]
-            [lwcgl.math.matrix4d :as mat4 :refer [mat4]]
-            [lwcgl.math.vector2d :as vec2 :refer [vec2]]
-            [lwcgl.math.vector3d :as vec3 :refer [vec3]]
-            [lwcgl.math.vector4d :as vec4 :refer [vec4]]
-            [lwcgl.math.quaternion :as q]
+            [euclidean.math.matrix :as m :refer [mat2 mat3 mat4]]
+            [euclidean.math.vector :as v]
             
             [clojure.java.io :as io]
             
@@ -67,14 +62,14 @@
           :clip (gl-get-uniform-location the-program "cameraToClipMatrix"))
         z-near 1.0
         z-far 100.0
-        camera-to-clip-matrix (doto (mat4/set-zero! (mat4))
-                                (mat4/set-matrix! 0 0 frustum-scale)
-                                (mat4/set-matrix! 1 1 frustum-scale)
-                                (mat4/set-matrix! 2 2 (/ (+ z-far z-near)
-                                                         (- z-near z-far)))
-                                (mat4/set-matrix! 2 3 -1.0)
-                                (mat4/set-matrix! 3 2 (/ (* 2 z-far z-near)
-                                                         (- z-near z-far))))
+        camera-to-clip-matrix (-> (m/add-identity (mat4))
+                                  (assoc-in [0 0] frustum-scale)
+                                  (assoc-in [1 1] frustum-scale)
+                                  (assoc-in [2 2] (/ (+ z-far z-near)
+                                                     (- z-near z-far)))
+                                  (assoc-in [3 2] -1.0)
+                                  (assoc-in [2 3] (/ (* 2 z-far z-near)
+                                                     (- z-near z-far))))
         mat4-buffer (buffers/create-float-buffer mat4-size)
         buf (fill-and-flip-buffer camera-to-clip-matrix mat4-buffer)]
     (with-program the-program
@@ -96,7 +91,7 @@
         :camera-to-clip-matrix camera-to-clip-matrix
         :armature (arm/armature)))))
 
-(defn update-armature
+(defn handle-key
   [state]
   (cond-> state
     (kb/key-down? kb/KEY_A) (update-in [:armature] arm/adjust-base false)
@@ -116,7 +111,7 @@
 
     (kb/key-down? kb/KEY_Q) (update-in [:armature] arm/adjust-finger-open true)
     (kb/key-down? kb/KEY_E) (update-in [:armature] arm/adjust-finger-open false)
-    ))
+    (kb/key-down? kb/KEY_ESCAPE) (assoc :finished? true)))
 
 (defn update
   [{:keys [armature] :as state}]
@@ -126,9 +121,8 @@
     (reduce (fn [state key]
               (do-when
                 (kb/key-down? kb/KEY_SPACE) (println armature-keys))
-              (cond-> state
-                (kb/key-down? kb/KEY_ESCAPE) (assoc :finished? true)))
-            (update-armature state) (key-presses))))
+              (handle-key state))
+            state (key-presses))))
 
 (defn draw
   [{:keys [the-program model mat4-buffer armature]
@@ -138,24 +132,10 @@
   (gl-clear (bit-or GL_COLOR_BUFFER_BIT GL_DEPTH_BUFFER_BIT))
   (arm/draw state))
 
-(defn resize
-  [{:keys [the-program camera-to-clip-matrix clip mat4-buffer] :as state}]
-  (doto camera-to-clip-matrix
-    (mat4/set-matrix! 0 0 (/ frustum-scale (/ (width) (height))))
-    (mat4/set-matrix! 1 1 frustum-scale))
-  (with-program the-program
-    (gl-uniform-matrix4 clip false (fill-and-flip-buffer camera-to-clip-matrix
-                                                         mat4-buffer)))
-  (gl-viewport 0 0
-               (* (width) (d/pixel-scale-factor))
-               (* (height) (d/pixel-scale-factor))))
-
 (defsketch tut06
   :setup setup
   :update update
   :draw draw
-  :resize resize
   :frame-rate 60
   :size [700 700]
-  :title "tut06"
-  :features #{:resizable})
+  :title "tut06")

@@ -242,9 +242,8 @@
    (.-m02 mat) (.-m12 mat) (.-m22 mat) (.-m32 mat)
    (.-m03 mat) (.-m13 mat) (.-m23 mat) (.-m33 mat)])
 
-(defn clamp
-  [val min max]
-  (cond
-    (< val min) min
-    (> val max) max
-    :else val))
+(definline clamp
+  [val min-val max-val]
+  (if (every? number? [val min-val max-val])
+    (min (max min-val val) max-val)
+    `(min (max ~min-val ~val) ~max-val)))
